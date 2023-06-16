@@ -15,11 +15,160 @@ def check_form_file(filename):
         i.e. a filled-in module choice form
     """ 
     student = parse_excel_form(filename)
+    missed_programme_requirements, adviser_recommendations = find_missing_programme_requirements(student)
+    
+    summary_data = [student.student_id, missed_programme_requirements, adviser_recommendations]
+    summary_data_frame = pd.DataFrame([summary_data], columns = ['Student ID', 'Unmet programme requirements', 'Adviser recommendations'])
 
 #     check_programme_requirements(student)
 #     check_prerequisites(student)
 #     check_timetable_clashes(student)
+    return summary_data_frame
 
+def find_missing_programme_requirements(student):
+    """check that the student fulfils their honours requirements
+    
+    Parameters :
+    -----------
+    
+    student : instance of Student class
+        can be generated with 'parse_excel_form()'
+        
+    Returns :
+    ---------
+
+    missed_requirements : string
+        Unmet programme requirements. Will return 'None' if all programme requirements are met
+        
+    adviser_recommendations : string
+        advising recommendations that don't strictly count as unmet programme requirements
+    """
+    
+    list_of_missed_requirements = []
+    list_of_adviser_recommendations = []
+    full_module_list = student.full_module_list()
+    if student.programme_name == 'Bachelor of Science (Honours) Mathematics':
+        # check the credit load
+        missed_requirement, adviser_recommendation = check_for_120_credits_each_year(student)
+        list_of_missed_requirements.append(missed_requirement)
+        list_of_adviser_recommendations.append(adviser_recommendation)
+
+        # check there are four modules in MT3501 to MT3508
+        list_of_MT350X_modules = ['MT3501', 'MT3502', 'MT3503', 'MT3504', 'MT3505', 'MT3506', 'MT3507', 'MT3508']
+        number_of_MT350X_modules = len(set.intersection(set(full_module_list),set(list_of_MT350X_modules)))
+        if number_of_MT350X_modules < 4:
+            list_of_missed_requirements.append('Student is only taking ' + str(number_of_MT350X_modules) + 'out of MT3501-MT3508')
+            
+        # check there is a computing module
+        list_of_computing_modules = ['MT3510', 'MT4111', 'MT4112', 'MT4113']
+        number_of_computing_modules = len(set.intersection(set(full_module_list),set(list_of_computing_modules)))
+        if number_of_computing_modules ==0:
+            list_of_missed_requirements.append('Student is not taking a computing module')
+        
+        # check there is a final year project
+        list_of_project_codes = ['MT4598', 'MT4599']
+        number_final_year_projects = len(set.intersection(set(full_module_list),set(list_of_project_codes)))
+        if number_final_year_projects !=1:
+            list_of_missed_requirements.append('Student is not taking an allowed final year project')
+        
+        # check that unallowed modules are not taken
+        unallowed_modules = ['MT4794', 'MT4795', 'MT4796', 'MT4797']
+        number_of_unallowed_modules = len(set.intersection(set(full_module_list),set(unallowed_modules)))
+        if number_of_unallowed_modules >0:
+            list_of_missed_requirements.append('Student is taking a module in MT4794-MT4797')
+        list_of_5000_level_modules = [module for module in full_module_list if 'MT5' in module]
+        if len(list_of_5000_level_modules) >0:
+            list_of_missed_requirements.append('Student is taking 5000 level modules')
+
+    # merge all missed requirements into a string
+    missed_requirements = merge_list_to_long_string(list_of_missed_requirements)
+    adviser_recommendations = merge_list_to_long_string(list_of_adviser_recommendations)
+
+    return missed_requirements, adviser_recommendations
+        
+def check_for_120_credits_each_year(student):
+    """check whether the student is actually taking 120 credits each acacemic year, and whether they 
+       have an even split of modules.
+
+    Parameters:
+    -----------
+
+    student : instance of Student()
+        the student we are investigating
+
+    Returns:
+    --------
+
+    missed_requirement : string
+        a note if credits are not satisfied
+
+    adviser_recommendation : string
+        a note if module split is uneven 
+    """
+    honours_years = student.honours_module_choices['Honours year'].unique()
+    list_of_missed_requirements = []
+    list_of_adviser_recommendations = []
+    
+    #checking total number of modules
+    for honours_year in honours_years:
+        this_data_base = student.honours_module_choices[student.honours_module_choices['Honours year'] == honours_year]
+        if honours_year == 'Year 1' or (honours_year == 'Year 2' and student.expected_honours_years == 3):
+            if len(this_data_base)!=8:
+                list_of_missed_requirements.append('Not collecting 120 credits in ' + honours_year)
+        if honours_year== 3 and len(these_modules)!=7:
+            list_of_missed_requirements.append('Not collecting 120 credits in ' + honours_year)
+    
+    #checking moduel splits
+    for honours_year in honours_years:
+        if honours_year == 'Year 1' or (honours_year == 'Year 2' and student.expected_honours_years == 3):
+            for semester in ['S1', 'S2']:
+                this_smaller_data_base = this_data_base[this_data_base['Semester'] == semester]
+                if len(this_smaller_data_base) !=4:
+                    list_of_adviser_recommendations.append('Not taking even credit split in ' + honours_year)
+        elif honours_year == 'Year 2':
+            this_reduced_data_base = this_data_base[this_data_base['Module code'] != 'MT4599']
+            semester_1_modules = this_reduced_data_base[this_reduced_data_base['Semester'] == 'S1']['Module code']
+            semester_2_modules = this_reduced_data_base[this_reduced_data_base['Semester'] == 'S1']['Module code']
+            if len(semester_1_modules) != 4 or len(semester_2_modules) != 3:
+                list_of_adviser_recommendations.append('taking high course load in second semester of final honours year')
+        elif honours_year == 'Year 3':
+            this_reduced_data_base = this_data_base[this_data_base['Module code'] != 'MT5599']
+            semester_1_modules = this_reduced_data_base[this_reduced_data_base['Semester'] == 'S1']['Module code']
+            semester_2_modules = this_reduced_data_base[this_reduced_data_base['Semester'] == 'S1']['Module code']
+            if len(semester_1_modules) != 3 or len(semester_2_modules) != 3:
+                list_of_adviser_recommendations.append('taking uneven course load in final honours year')
+    
+    missed_requirement = merge_list_to_long_string(list_of_missed_requirements)
+    adviser_recommendation = merge_list_to_long_string(list_of_adviser_recommendations)
+    
+    return missed_requirement, adviser_recommendation
+ 
+
+def merge_list_to_long_string(a_list):
+    """takes a list of strings and returns a string that separates the entries with a comma and a space.
+        Returns the string 'None' if the list is empty. 
+    
+    Parameters:
+    -----------
+    a_list : list
+        the list we want to parse, for example a list of unmet programme requirements
+    
+    Returns:
+    --------
+    a_string : string
+        contains all entries in a_list separated by a comma and a space
+        is 'None' if a_list is empty
+    """
+    if len(a_list) == 0:
+        a_string = 'None'
+    else:
+        a_string = a_list[0]
+        if len(a_list) > 1:
+            for list_entry in a_list[1:]:
+                a_string += ', ' + list_entry
+    
+    return a_string
+    
 def parse_excel_form(filename):
     """returns an instance of a 'student' class
     that has all the excel data as named attributes
@@ -37,6 +186,7 @@ def parse_excel_form(filename):
     student : instance of Student class
         an object with student attributes.
     """
+    # open the form file and read in the student ID
     this_workbook = openpyxl.load_workbook(filename=filename)
     sheet = this_workbook.active
     this_student = Student()
@@ -88,39 +238,39 @@ def parse_excel_form(filename):
     this_student.programme_name = programme_entries[0]
     print(this_student.programme_name)
     
-    this_student.honours_module_choices = {}
-    
+    # Figure out what year they are in and how many they have left
     if 'Bachelor of Science' in this_student.programme_name:
         no_of_programme_years = 4
-        expected_honours_years = 2
-    if 'Master in Mathematics' in this_student.programme_name:
+        this_student.expected_honours_years = 2
+    elif 'Master in Mathematics' in this_student.programme_name:
         no_of_programme_years = 5
-        expected_honours_years = 3
+        this_student.expected_honours_years = 3
+    else: 
+        print('what the heck kind of programme is that?? ' + this_student.programme_name)
     
     if 'EXA120' in student_data_base['Module code']:
         no_of_programme_years -=1
         
-    no_subhonours_years = no_of_programme_years - expected_honours_years
-    current_honours_year = year_of_study - no_subhonours_years
+    no_subhonours_years = no_of_programme_years - this_student.expected_honours_years
+    this_student.current_honours_year = year_of_study - no_subhonours_years
     
-    for remaining_honours_year in range(current_honours_year,expected_honours_years + 1):
-        print('processing honours year')
-        print(remaining_honours_year)
-        modules_key = 'Year ' + str(remaining_honours_year)
-        this_student.honours_module_choices[modules_key]={}
-        semester_one_modules = get_modules_under_header(sheet, modules_key + ' of Honours: Semester 1') 
-        this_student.honours_module_choices[modules_key]['S1'] = semester_one_modules
-        semester_two_modules = get_modules_under_header(sheet, modules_key + ' of Honours: Semester 2') 
-        this_student.honours_module_choices[modules_key]['S2'] = semester_two_modules
+    # read in modules for all honours years that have not happened yet
+    module_table = []
+    
+    for remaining_honours_year in range(this_student.current_honours_year,this_student.expected_honours_years + 1):
+        year_key = 'Year ' + str(remaining_honours_year)
+        calendar_year = 22 + remaining_honours_year
+        calendar_year_string = '20' + str(calendar_year) + '/' + str(calendar_year + 1)
+        for semester_number in [1,2]:
+            semester_modules = get_modules_under_header(sheet, year_key + ' of Honours: Semester ' + str(semester_number)) 
+            for module in semester_modules:
+                module_table.append([year_key, calendar_year_string, 'S' + str(semester_number), module,])
 
-    # if year_of_study == 3:
-    #     modules_year_1_s1 = get_modules_under_header(sheet,'Year 1 of Honours: Semester 1') 
-    #     if len(modules_year_1_s1) >0:
-    #         this_student.honours_module_choices['Year 1']= {}
-    #         this_student.honours_module_choices['Year 1']['S1'] = modules_year_1_s1
-
-        print('found the following module codes')
-        print(this_student.honours_module_choices)
+    # Turn this all into a nice pandas data frame
+    this_student.honours_module_choices = pd.DataFrame(module_table, columns = ['Honours year', 'Calendar year', 'Semester', 'Module code'])
+    
+    # return the student
+    return this_student
 
 def get_modules_under_header(sheet, header):
     """get all the modules in the student module choice form under a given heading
@@ -159,28 +309,26 @@ def get_modules_under_header(sheet, header):
 
     return modules
 
-#         module_choices_3rd_year_s1 = ...
-#         module_choices_3rd_year_s2 = ...
-#         module_choices_4th_year_s1 = ...
-#         module_choices_4th_year_s2 = ...
-#         if programme in list_of_long_programmes:
-#             module_choices_5th_year = ...
-#     if year == 4:
-#         #get module choices from student records for 3rd year
-#         module_choices_4th_year = ...
-#         if programme in list_of_long_programmes:
-#             module_choices_5th_year = ...
-#     if year == 5:
-#         # get module choices from student records 3rd and 4th year
-#         module_choices_5th_year = ...
-#     # check programme requirements are fulfilled
-#     # check course pre-requisites
-#     # check for timetable clashes
-
 class Student():
     def __init__(self):
         pass
-#     
+
+    def full_module_list(self):
+        """Return a list of all modules that the student is expected
+        to have taken at the end of their final year
+        
+        Returns:
+        --------
+        
+        full_module_list : list of strings
+            the list of all modules the student has taken or is expected to take
+        """
+        full_module_list = self.passed_modules.copy()
+        full_module_list += self.honours_module_choices['Module code'].to_list()
+        
+        return full_module_list
+
+
 # def check_programme_requirements(Student)
 #     """This checks if a student passes their programme requirements.
 #     
@@ -239,6 +387,16 @@ class Student():
 #             these_modules = student.get_modules(year, semester)
 #             check_for_timetable_clashes(these_modules)
 
+def colour_code_passes(column):
+    passed_colour = 'background-color: palegreen;'
+    failed_colour = 'background-color: lightcoral;'
+    return [passed_colour if value=='None' else failed_colour for value in column]
+
+def colour_recommendations(column):
+    recommendation_colour = 'background-color: orange;'
+    default_colour = ''
+    return [default_colour if value=='None' else recommendation_colour for value in column]
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
                     prog='AdvisingScript',
@@ -248,7 +406,17 @@ if __name__ == "__main__":
     parser.add_argument('filename')       
     args = parser.parse_args()
     form_filename = args.filename
-    check_form_file(form_filename)
+    summary_data_frame = check_form_file(form_filename)
+    summary_data_frame = (summary_data_frame.style.apply(colour_code_passes, subset = ['Unmet programme requirements'], axis = 0).
+                          apply(colour_recommendations, subset = ['Adviser recommendations'], axis = 0))
+    writer = pd.ExcelWriter('summary_file.xlsx') 
+    # Manually adjust the width of the last column
+    summary_data_frame.to_excel(writer)
+    writer.sheets['Sheet1'].set_column(0,0,width=5)
+    writer.sheets['Sheet1'].set_column(1,1,width=10)
+    writer.sheets['Sheet1'].set_column(2,2,width=30)
+    writer.sheets['Sheet1'].set_column(3,3,width=30)
+    writer.save()
    # parse command line
    # get list of form files
    # for each form file check student
