@@ -46,7 +46,7 @@ def find_missing_programme_requirements(student):
     
     list_of_missed_requirements = []
     list_of_adviser_recommendations = []
-    full_module_list = student.full_module_list()
+    full_module_list = student.full_module_list
     if student.programme_name == 'Bachelor of Science (Honours) Mathematics':
         # check the credit load
         missed_requirement, adviser_recommendation = check_for_120_credits_each_year(student)
@@ -189,8 +189,7 @@ def parse_excel_form(filename):
     # open the form file and read in the student ID
     this_workbook = openpyxl.load_workbook(filename=filename)
     sheet = this_workbook.active
-    this_student = Student()
-    this_student.student_id = sheet["D5"].value
+    student_id = sheet["D5"].value
     
     # Now that we have the student ID we can look up the student in the database:
     current_directory = os.path.dirname(os.path.abspath(__file__))
@@ -214,9 +213,9 @@ def parse_excel_form(filename):
     data_base_index = 0
     while student_not_yet_found:
         this_data_base = data_bases[data_base_index]
-        if this_student.student_id in this_data_base['Student ID'].to_numpy():
+        if student_id in this_data_base['Student ID'].to_numpy():
             student_not_yet_found = False
-            student_data_base = this_data_base[this_data_base['Student ID'] == this_student.student_id]
+            student_data_base = this_data_base[this_data_base['Student ID'] == student_id]
         data_base_index += 1
 
     # infer the year of study from the earliest module taken
@@ -225,39 +224,38 @@ def parse_excel_form(filename):
     
     #students who took their first module in 2021 will now be in year 3, i.e. 2023-2021+1
     year_of_study = 2023 - earliest_year + 1
-    this_student.year_of_study = year_of_study
+    year_of_study = year_of_study
     
     # identify all modules that the student has passed
     data_base_of_passed_modules = student_data_base[student_data_base['Assessment result']=='P']
     passed_modules = data_base_of_passed_modules['Module code'].to_list()
-    this_student.passed_modules = passed_modules
+    passed_modules = passed_modules
     
     #identify the programme of the student
     programme_entries = student_data_base['Programme name'].unique()    
     assert(len(programme_entries == 1))
-    this_student.programme_name = programme_entries[0]
-    print(this_student.programme_name)
+    programme_name = programme_entries[0]
     
     # Figure out what year they are in and how many they have left
-    if 'Bachelor of Science' in this_student.programme_name:
+    if 'Bachelor of Science' in programme_name:
         no_of_programme_years = 4
-        this_student.expected_honours_years = 2
-    elif 'Master in Mathematics' in this_student.programme_name:
+        expected_honours_years = 2
+    elif 'Master in Mathematics' in programme_name:
         no_of_programme_years = 5
-        this_student.expected_honours_years = 3
+        expected_honours_years = 3
     else: 
-        print('what the heck kind of programme is that?? ' + this_student.programme_name)
+        print('what the heck kind of programme is that?? ' + programme_name)
     
     if 'EXA120' in student_data_base['Module code']:
         no_of_programme_years -=1
         
-    no_subhonours_years = no_of_programme_years - this_student.expected_honours_years
-    this_student.current_honours_year = year_of_study - no_subhonours_years
+    no_subhonours_years = no_of_programme_years - expected_honours_years
+    current_honours_year = year_of_study - no_subhonours_years
     
     # read in modules for all honours years that have not happened yet
     module_table = []
     
-    for remaining_honours_year in range(this_student.current_honours_year,this_student.expected_honours_years + 1):
+    for remaining_honours_year in range(current_honours_year,expected_honours_years + 1):
         year_key = 'Year ' + str(remaining_honours_year)
         calendar_year = 22 + remaining_honours_year
         calendar_year_string = '20' + str(calendar_year) + '/' + str(calendar_year + 1)
@@ -267,10 +265,72 @@ def parse_excel_form(filename):
                 module_table.append([year_key, calendar_year_string, 'S' + str(semester_number), module,])
 
     # Turn this all into a nice pandas data frame
-    this_student.honours_module_choices = pd.DataFrame(module_table, columns = ['Honours year', 'Calendar year', 'Semester', 'Module code'])
+    honours_module_choices = pd.DataFrame(module_table, columns = ['Honours year', 'Calendar year', 'Semester', 'Module code'])
+    
+    this_student = Student(student_id, 
+                           programme_name, 
+                           year_of_study,
+                           expected_honours_years,
+                           current_honours_year,
+                           passed_modules,
+                           honours_module_choices)
     
     # return the student
     return this_student
+
+class Student():
+    def __init__(self, 
+                 student_id, 
+                 programme_name,
+                 year_of_study,
+                 expected_honours_years,
+                 current_honours_year,
+                 passed_modules,
+                 honours_module_choices):
+        """Constructor for the Student class.
+        
+        Parameters:
+        -----------
+        
+        student_id : int
+            The student ID
+            
+        programme_name : string
+            the full name of the programme, as it appears in the MMS databases
+            
+        year_of_study : int
+            the current year of study
+            
+        expected_honours_years : int
+            the number of expected honours years. This is slightly superfluous as it can be
+            inferred from the programme, i.e. it will be 3 for masters programmes and 2 for
+            bachelors programmes
+            
+        current_honours_year : int
+            Which year of honours the student is in - this is not superfluous, as it cannot always
+            be inferred from the year of study, since Advance Standing Credits (direct entry) need
+            to be taken into account
+            
+        passed_modules : list of strings
+            A list containing the module codes of all passed modules
+            
+        honours_module_choices : Pandas data frame
+            The honours module codes that the studen thas selected. The data frame current contains
+            the following columns ['Honours year', 'Calendar year', 'Semester', 'Module code']
+        """
+        
+        self.student_id = student_id
+        self.programme_name = programme_name
+        self.year_of_study = year_of_study
+        self.expected_honours_years = expected_honours_years
+        self.current_honours_year = current_honours_year
+        self.passed_modules = passed_modules
+        self.honours_module_choices = honours_module_choices
+
+        # for convenience also make a list of all selected and taken modules
+        self.full_module_list = self.passed_modules.copy()
+        self.full_module_list += self.honours_module_choices['Module code'].to_list()
+
 
 def get_modules_under_header(sheet, header):
     """get all the modules in the student module choice form under a given heading
@@ -308,26 +368,6 @@ def get_modules_under_header(sheet, header):
         module_code_is_not_empty = sheet[next_cell_name_with_module].value is not None
 
     return modules
-
-class Student():
-    def __init__(self):
-        pass
-
-    def full_module_list(self):
-        """Return a list of all modules that the student is expected
-        to have taken at the end of their final year
-        
-        Returns:
-        --------
-        
-        full_module_list : list of strings
-            the list of all modules the student has taken or is expected to take
-        """
-        full_module_list = self.passed_modules.copy()
-        full_module_list += self.honours_module_choices['Module code'].to_list()
-        
-        return full_module_list
-
 
 # def check_programme_requirements(Student)
 #     """This checks if a student passes their programme requirements.
