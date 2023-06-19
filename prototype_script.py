@@ -2,6 +2,9 @@ import argparse
 import openpyxl
 import os
 import pandas as pd
+import termcolor
+
+# os.system('color')
 
 def check_form_file(filename):
     """preforms all advising checks on the 
@@ -15,15 +18,50 @@ def check_form_file(filename):
         i.e. a filled-in module choice form
     """ 
     student = parse_excel_form(filename)
+    print('Processing student with ID')
+    print(student.student_id)
+    # print('1234234234')
+    print(' ')
+
     missed_programme_requirements, adviser_recommendations = find_missing_programme_requirements(student)
     
+    print('The student is missing the following programme requirements:')
+    colour_code_print_statement(missed_programme_requirements)
+
+    print('I have the following comments to the adviser:')
+    colour_code_print_statement(adviser_recommendations, is_advice = True)
+
     summary_data = [student.student_id, missed_programme_requirements, adviser_recommendations]
     summary_data_frame = pd.DataFrame([summary_data], columns = ['Student ID', 'Unmet programme requirements', 'Adviser recommendations'])
 
-#     check_programme_requirements(student)
 #     check_prerequisites(student)
+#     check_modules_are_running(student)
 #     check_timetable_clashes(student)
     return summary_data_frame
+
+def colour_code_print_statement(print_statement, is_advice = False):
+    """Prints the given string in red if the string is not equal to 'None'.
+    Otherwise it will print in green.
+    
+    Parameters:
+    -----------
+    
+    print_statement : string
+        the statement to be printed
+        
+    is_advice : bool
+        if False, strings that are not 'None' will be printed in light magenta instead of red
+    """
+    if print_statement != 'None':
+        if is_advice:
+            print(termcolor.colored(print_statement,'blue'))
+        else:
+            print(termcolor.colored(print_statement,'red'))
+    else:
+        print(termcolor.colored('None','green'))
+        
+    #add an empty line by default
+    print(' ')
 
 def find_missing_programme_requirements(student):
     """check that the student fulfils their honours requirements
@@ -100,11 +138,11 @@ def find_missing_programme_requirements(student):
         # remind advisers to get permissions
         list_of_planned_5000_level_modules = [module for module in student.planned_honours_modules if 'MT5' in module]
         if len(list_of_planned_5000_level_modules) >0:
-            list_of_adviser_recommendations.append('Student is planning to take 5000 level modules, which requires permission')
+            list_of_adviser_recommendations.append('Student is planning to take 5000 level modules (which will require permission)')
 
         list_of_2000_level_modules = [module for module in student.planned_honours_modules if 'MT2' in module]
         if len(list_of_2000_level_modules) >0:
-            list_of_adviser_recommendations.append('Student is planning to take 2000 level modules, which requires permission')
+            list_of_adviser_recommendations.append('Student is planning to take 2000 level modules, (which will require permission)')
 
         list_of_planned_non_maths_modules = [module for module in student.planned_honours_modules if 'MT2' not in module 
                                                                                         and 'MT3' not in module 
@@ -179,7 +217,7 @@ def check_for_120_credits_each_year(student):
 
 def merge_list_to_long_string(a_list):
     """takes a list of strings and returns a string that separates the entries with a comma and a space.
-        Returns the string 'None' if the list is empty. 
+        Returns the string 'None' if the list is empty. If the first entry of the list is 'None' then that entry will be ignored.
     
     Parameters:
     -----------
@@ -194,10 +232,20 @@ def merge_list_to_long_string(a_list):
     """
     if len(a_list) == 0:
         a_string = 'None'
-    else:
-        a_string = a_list[0]
-        if len(a_list) > 1:
-            for list_entry in a_list[1:]:
+    elif len(a_list) == 1:
+        if a_list[0] != 'None':
+            a_string = a_list[0]
+        else:
+            a_string = 'None'
+    else: 
+        if a_list[0] != 'None':
+            a_string = a_list[0]
+            starting_index = 1
+        else:
+            a_string = a_list[1]
+            starting_index = 2
+        if len(a_list)>(starting_index):
+            for list_entry in a_list[starting_index:]:
                 a_string += ', ' + list_entry
     
     return a_string
