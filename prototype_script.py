@@ -46,7 +46,6 @@ def find_missing_programme_requirements(student):
     
     list_of_missed_requirements = []
     list_of_adviser_recommendations = []
-    full_module_list = student.full_module_list
     if student.programme_name == 'Bachelor of Science (Honours) Mathematics':
         # check the credit load
         missed_requirement, adviser_recommendation = check_for_120_credits_each_year(student)
@@ -55,37 +54,71 @@ def find_missing_programme_requirements(student):
 
         # check there are four modules in MT3501 to MT3508
         list_of_MT350X_modules = ['MT3501', 'MT3502', 'MT3503', 'MT3504', 'MT3505', 'MT3506', 'MT3507', 'MT3508']
-        number_of_MT350X_modules = len(set.intersection(set(full_module_list),set(list_of_MT350X_modules)))
+        number_of_MT350X_modules = student.get_number_of_modules_in_list(list_of_MT350X_modules)
         if number_of_MT350X_modules < 4:
             list_of_missed_requirements.append('Student is only taking ' + str(number_of_MT350X_modules) + 'out of MT3501-MT3508')
             
         # check there is a computing module
         list_of_computing_modules = ['MT3510', 'MT4111', 'MT4112', 'MT4113']
-        number_of_computing_modules = len(set.intersection(set(full_module_list),set(list_of_computing_modules)))
+        number_of_computing_modules = student.get_number_of_modules_in_list(list_of_computing_modules)
         if number_of_computing_modules ==0:
             list_of_missed_requirements.append('Student is not taking a computing module')
         
         # check there is a final year project
         list_of_project_codes = ['MT4598', 'MT4599']
-        number_final_year_projects = len(set.intersection(set(full_module_list),set(list_of_project_codes)))
+        number_final_year_projects= student.get_number_of_modules_in_list(list_of_project_codes)
         if number_final_year_projects !=1:
             list_of_missed_requirements.append('Student is not taking an allowed final year project')
+        else:
+            # check that the student is actually taking it in year 4
+            if 'MT4598' in student.full_module_list:
+                this_year = student.honours_module_choices[student.honours_module_choices['Module code'] == 'MT4598']['Honours year'].iloc[0]
+            else:
+                this_year = student.honours_module_choices[student.honours_module_choices['Module code'] == 'MT4599']['Honours year'].iloc[0]
+            if this_year != 'Year 2':
+                list_of_missed_requirements.append('Student is not taking their final year project in their final year.')
         
         # check that unallowed modules are not taken
         unallowed_modules = ['MT4794', 'MT4795', 'MT4796', 'MT4797']
-        number_of_unallowed_modules = len(set.intersection(set(full_module_list),set(unallowed_modules)))
+        number_of_unallowed_modules = student.get_number_of_modules_in_list(unallowed_modules)
         if number_of_unallowed_modules >0:
             list_of_missed_requirements.append('Student is taking a module in MT4794-MT4797')
-        list_of_5000_level_modules = [module for module in full_module_list if 'MT5' in module]
-        if len(list_of_5000_level_modules) >0:
-            list_of_missed_requirements.append('Student is taking 5000 level modules')
+            
+        # check dip-down and dip-across: no more than two modules should be outside of MT3X to MT5X
+        list_of_all_non_maths_modules = [module for module in student.all_honours_modules if 'MT2' not in module 
+                                                                                       and 'MT3' not in module 
+                                                                                        and 'MT4' not in module 
+                                                                                        and 'MT5' not in module]
+        if len(list_of_all_non_maths_modules) >2:
+            list_of_missed_requirements.append('Student is taking more than 2 modules as dip-down or dip-across, which is not allowed.')
+
+        # check that there are at least 90 credits (6 modules) at 4000 level or above
+        list_of_4000_and_5000_modules = [module for module in student.all_honours_modules if 'MT4' in module or 'MT5' in module]
+        if len(list_of_4000_and_5000_modules) <6:
+            list_of_missed_requirements.append('Student is not planning to take enough credits at 4000 level or above')
+
+        # remind advisers to get permissions
+        list_of_planned_5000_level_modules = [module for module in student.planned_honours_modules if 'MT5' in module]
+        if len(list_of_planned_5000_level_modules) >0:
+            list_of_adviser_recommendations.append('Student is planning to take 5000 level modules, which requires permission')
+
+        list_of_2000_level_modules = [module for module in student.planned_honours_modules if 'MT2' in module]
+        if len(list_of_2000_level_modules) >0:
+            list_of_adviser_recommendations.append('Student is planning to take 2000 level modules, which requires permission')
+
+        list_of_planned_non_maths_modules = [module for module in student.planned_honours_modules if 'MT2' not in module 
+                                                                                        and 'MT3' not in module 
+                                                                                        and 'MT4' not in module 
+                                                                                        and 'MT5' not in module]
+        if len(list_of_planned_non_maths_modules) >0:
+            list_of_adviser_recommendations.append('Student is planning to take non-MT modules, which requires permission')
 
     # merge all missed requirements into a string
     missed_requirements = merge_list_to_long_string(list_of_missed_requirements)
     adviser_recommendations = merge_list_to_long_string(list_of_adviser_recommendations)
 
     return missed_requirements, adviser_recommendations
-        
+    
 def check_for_120_credits_each_year(student):
     """check whether the student is actually taking 120 credits each acacemic year, and whether they 
        have an even split of modules.
@@ -252,6 +285,16 @@ def parse_excel_form(filename):
     no_subhonours_years = no_of_programme_years - expected_honours_years
     current_honours_year = year_of_study - no_subhonours_years
     
+    # make a separate data base of passed honours modules
+    passed_honours_modules = list()
+    for previous_honours_year in range(1,current_honours_year):
+        year_difference = current_honours_year - previous_honours_year  
+        year_number = 23-year_difference
+        calendar_year_string = '20' + str(calendar_year) + '/' + str(calendar_year + 1)
+        data_base_of_passed_modules_this_year = data_base_of_passed_modules[data_base_of_passed_modules['year']==calendar_year_string]
+        passed_modules_this_hear = data_base_of_passed_modules_this_year['Module code'].to_list()
+        passed_honours_modules += passed_modules_this_hear
+    
     # read in modules for all honours years that have not happened yet
     module_table = []
     
@@ -273,6 +316,7 @@ def parse_excel_form(filename):
                            expected_honours_years,
                            current_honours_year,
                            passed_modules,
+                           passed_honours_modules,
                            honours_module_choices)
     
     # return the student
@@ -286,6 +330,7 @@ class Student():
                  expected_honours_years,
                  current_honours_year,
                  passed_modules,
+                 passed_honours_modules,
                  honours_module_choices):
         """Constructor for the Student class.
         
@@ -314,6 +359,9 @@ class Student():
         passed_modules : list of strings
             A list containing the module codes of all passed modules
             
+        passed_honours_modules : list of strings
+            A list of all honours modules that the student has already taken and passed
+            
         honours_module_choices : Pandas data frame
             The honours module codes that the studen thas selected. The data frame current contains
             the following columns ['Honours year', 'Calendar year', 'Semester', 'Module code']
@@ -325,13 +373,40 @@ class Student():
         self.expected_honours_years = expected_honours_years
         self.current_honours_year = current_honours_year
         self.passed_modules = passed_modules
+        self.passed_honours_modules = passed_honours_modules
         self.honours_module_choices = honours_module_choices
 
         # for convenience also make a list of all selected and taken modules
         self.full_module_list = self.passed_modules.copy()
         self.full_module_list += self.honours_module_choices['Module code'].to_list()
+        
+        # and a list of all selected and taken honours modules
+        self.all_honours_modules = self.passed_honours_modules
+        self.all_honours_modules += self.honours_module_choices['Module code'].tolist()
+        
+        # and a list of planned honours modules
+        self.planned_honours_modules = self.honours_module_choices['Module code'].tolist()
 
-
+    def get_number_of_modules_in_list(self, module_list):
+        """Get the number of modules that the student is taking in the module list. Already passed modules and scheduled
+        modules are both counted.
+        
+        Parameters:
+        -----------
+        
+        module_list : list of strings
+            list of module codes
+            
+        Returns: 
+        --------
+        
+        number_of_modules : int
+            the number of modules in the given list that the student is taking.
+        """
+        number_of_modules = len(set.intersection(set(self.full_module_list),set(module_list)))
+        
+        return number_of_modules
+    
 def get_modules_under_header(sheet, header):
     """get all the modules in the student module choice form under a given heading
     
