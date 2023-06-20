@@ -22,7 +22,7 @@ def check_form_file(filename):
     print(student.student_id)
     # print('1234234234')
     print(' ')
-
+    
     missed_programme_requirements, adviser_recommendations = find_missing_programme_requirements(student)
     
     print('The student is missing the following programme requirements:')
@@ -183,10 +183,10 @@ def check_for_120_credits_each_year(student):
     #checking total number of modules
     for honours_year in honours_years:
         this_data_base = student.honours_module_choices[student.honours_module_choices['Honours year'] == honours_year]
-        if honours_year == 'Year 1' or (honours_year == 'Year 2' and student.expected_honours_years == 3):
+        if honours_year == 'Year 1' or honours_year == 'Year 2':
             if len(this_data_base)!=8:
                 list_of_missed_requirements.append('Not collecting 120 credits in ' + honours_year)
-        if honours_year== 3 and len(these_modules)!=7:
+        if honours_year == 'Year 3' and len(this_data_base)!=7:
             list_of_missed_requirements.append('Not collecting 120 credits in ' + honours_year)
     
     #checking moduel splits
@@ -201,19 +201,18 @@ def check_for_120_credits_each_year(student):
             semester_1_modules = this_reduced_data_base[this_reduced_data_base['Semester'] == 'S1']['Module code']
             semester_2_modules = this_reduced_data_base[this_reduced_data_base['Semester'] == 'S1']['Module code']
             if len(semester_1_modules) != 4 or len(semester_2_modules) != 3:
-                list_of_adviser_recommendations.append('taking high course load in second semester of final honours year')
+                list_of_adviser_recommendations.append('Student is taking a high course load in second semester of final honours year')
         elif honours_year == 'Year 3':
             this_reduced_data_base = this_data_base[this_data_base['Module code'] != 'MT5599']
             semester_1_modules = this_reduced_data_base[this_reduced_data_base['Semester'] == 'S1']['Module code']
             semester_2_modules = this_reduced_data_base[this_reduced_data_base['Semester'] == 'S1']['Module code']
             if len(semester_1_modules) != 3 or len(semester_2_modules) != 3:
-                list_of_adviser_recommendations.append('taking uneven course load in final honours year')
+                list_of_adviser_recommendations.append('Student is taking uneven course load in final honours year')
     
     missed_requirement = merge_list_to_long_string(list_of_missed_requirements)
     adviser_recommendation = merge_list_to_long_string(list_of_adviser_recommendations)
     
     return missed_requirement, adviser_recommendation
- 
 
 def merge_list_to_long_string(a_list):
     """takes a list of strings and returns a string that separates the entries with a comma and a space.
