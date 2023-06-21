@@ -3,8 +3,12 @@ import openpyxl
 import os
 import pandas as pd
 import termcolor
+import re
 
 # os.system('color')
+
+module_catalogue_location = os.path.join(os.path.dirname(__file__),'module_catalogue','Module_catalogue.xlsx') 
+module_catalogue = pd.read_excel(module_catalogue_location)
 
 def check_form_file(filename):
     """preforms all advising checks on the 
@@ -23,21 +27,189 @@ def check_form_file(filename):
     # print('1234234234')
     print(' ')
     
-    missed_programme_requirements, adviser_recommendations = find_missing_programme_requirements(student)
+    missed_programme_requirements, programme_adviser_recommendations = find_missing_programme_requirements(student)
     
     print('The student is missing the following programme requirements:')
     colour_code_print_statement(missed_programme_requirements)
 
+    missed_prerequisites, prerequisite_adviser_recommendations = find_missing_prerequisites(student)
+    
+    print('The student is missing the following prerequisites')
+    colour_code_print_statement(missed_prerequisites)
+
+    adviser_recommendations = merge_list_to_long_string([programme_adviser_recommendations, prerequisite_adviser_recommendations])
     print('I have the following comments to the adviser:')
     colour_code_print_statement(adviser_recommendations, is_advice = True)
 
-    summary_data = [student.student_id, missed_programme_requirements, adviser_recommendations]
-    summary_data_frame = pd.DataFrame([summary_data], columns = ['Student ID', 'Unmet programme requirements', 'Adviser recommendations'])
+    summary_data = [student.student_id, missed_programme_requirements, missed_prerequisites, adviser_recommendations]
+    summary_data_frame = pd.DataFrame([summary_data], columns = ['Student ID', 'Unmet programme requirements', 'Missing prerequisites', 'Adviser recommendations'])
 
 #     check_prerequisites(student)
 #     check_modules_are_running(student)
 #     check_timetable_clashes(student)
     return summary_data_frame
+
+def find_missing_prerequisites(student):
+    """find any missing prerequisites or violated anti-requisites.
+    
+    Parameters :
+    -----------
+    
+    student : instance of Student class
+        can be generated with 'parse_excel_form()'
+        
+    Returns :
+    ---------
+
+    missed_prerequisites : string
+        Unmet programme requirements and violated anti-requisites. Will return 'None' if all prerequisites are met and
+        no anti-requisite is violated.
+        
+    adviser_recommendations : string
+        advising recommendations, in this case may include reminders to get letters of approval.
+    """
+    list_of_missed_prerequisites = []
+    list_of_recommendations = []
+    
+    for module in student.planned_honours_modules:
+        these_missing_prerequisites, these_adviser_recommendations = get_missing_prerequisites_for_module(module, student)
+        list_of_missed_prerequisites += [these_missing_prerequisites]
+        list_of_recommendations += [these_adviser_recommendations]
+        
+    # merge all missed prerequisites into a string
+    missed_prerequisites = merge_list_to_long_string(list_of_missed_prerequisites)
+    adviser_recommendations = merge_list_to_long_string(list_of_recommendations)
+
+    return missed_prerequisites, adviser_recommendations
+    
+def get_missing_prerequisites_for_module(module, student):
+    """Find which prerequisites the student is missing for the given module.
+    Will also check anti-requisites.
+    
+    Parameters :
+    ------------
+    
+    module : string
+        module code for the module that we are investigating
+        
+    student : instance of Student class
+        The student we are checking
+        
+    Returns :
+    ---------
+
+    missed_prerequisites : string
+        missing prerequisites and violated anti-requisites
+        
+    adviser_recommendation : string
+        any relevant adviser recommndations for this module
+    """
+    # make a list of missing prerequisites
+    missed_prerequisites_list = []
+    adviser_recommendations_list = []
+
+    # find which year and semester the module is selected for
+    year_of_this_module = student.honours_module_choices[student.honours_module_choices['Module code'] == module]['Honours year'].values[0]
+    year_number_of_this_module = int(year_of_this_module[-1])
+    semester_of_this_module = student.honours_module_choices[student.honours_module_choices['Module code'] == module]['Semester'].values[0]
+
+    # construct a list of all courses the student has taken by then
+    # and construct a list of all modules the student is taking concurrently
+    previously_taken_modules = student.passed_modules.copy()
+    simultaneously_taken_modules = []
+    # we need this one for anti-requisites below
+    modules_taken_in_same_year=[]
+
+    for _, row in student.honours_module_choices.iterrows():
+        year_number = int(row['Honours year'][-1])
+        if year_number < year_number_of_this_module:
+            previously_taken_modules.append(row['Module code'])
+        if semester_of_this_module == 'S2':
+            if row['Honours year'] == year_of_this_module and row['Semester'] == 'S1' :
+                previously_taken_modules.append(row['Module code'])
+        if (row['Honours year'] == year_of_this_module 
+            and row['Semester'] == semester_of_this_module
+            and row['Module code'] != module):
+            simultaneously_taken_modules.append(row['Module code'])
+        if (row['Honours year'] == year_of_this_module 
+            and row['Module code'] != module):
+            modules_taken_in_same_year.append(row['Module code'])
+
+    # get pre-requisite string for that module
+    prerequisites = module_catalogue[module_catalogue['Module code'] == module]['Prerequisites'].values[0]
+    
+    # if the prerequsites are not empty
+    if  isinstance(prerequisites,str) and module!='MT5867':
+        prerequisite_list = prerequisites.split()
+        # if there is only one prerequisite we can easily parse that
+        if len(prerequisite_list) == 1:
+            # this must be a module code now
+            required_module = prerequisite_list[0]
+            if required_module not in previously_taken_modules:
+                missed_prerequisites_list.append('Student is missing prerequisite ' + required_module + ' for module ' + module)
+        # sometiems it's just a letter of agreement that we need to know about
+        elif len(prerequisite_list) == 3:
+            if prerequisites == 'Letter of agreement':
+                adviser_recommendations_list.append('Module ' + module + ' requires a letter of agreement')
+        else:
+            #now there is a boolean statement coming, so we turn the module codes into boolean strings and evaluate the outcome
+            # (thanks, ChatGPT)
+            module_codes = re.findall(r'[A-Z]{2}\d{4}', prerequisites)
+            parsed_prerequisites = prerequisites
+            for module_code in module_codes:
+                # co-requisites are preceded by the word co-requisite and don't have brackets after
+                if module_code in prerequisite_list:
+                    location_index = prerequisite_list.index(module_code)
+                    if location_index > 0:
+                        if prerequisite_list[location_index - 1] == 'co-requisite':
+                            if module_code in previously_taken_modules or module_code in simultaneously_taken_modules:
+                                parsed_prerequisites = parsed_prerequisites.replace(module_code, 'True')
+                            else:
+                                parsed_prerequisites = parsed_prerequisites.replace(module_code, 'False')
+                            parsed_prerequisites = parsed_prerequisites.replace('co-requisite ', '')
+                        else: 
+                            # the location index is larger than one but we are not at a co-requisite
+                            if module_code in previously_taken_modules:
+                                parsed_prerequisites = parsed_prerequisites.replace(module_code, 'True')
+                            else:
+                                parsed_prerequisites = parsed_prerequisites.replace(module_code, 'False')
+                    # the location index is zero and we just check the module code
+                    if module_code in previously_taken_modules:
+                        parsed_prerequisites = parsed_prerequisites.replace(module_code, 'True')
+                    else:
+                        parsed_prerequisites = parsed_prerequisites.replace(module_code, 'False')
+                else:
+                    if module_code in previously_taken_modules:
+                        parsed_prerequisites = parsed_prerequisites.replace(module_code, 'True')
+                    else:
+                        parsed_prerequisites = parsed_prerequisites.replace(module_code, 'False')
+            prerequisites_are_met = eval(parsed_prerequisites)
+            if not prerequisites_are_met:
+                missed_prerequisites_list.append('Student is missing prerequisite [' + prerequisites+ '] for module ' + module)
+            
+    # MT5867 is a special case that I don't know how to parse automatically:
+    if module == 'MT5867':
+        prerequisites = 'two of (MT3505, MT4003, MT4004, MT4512, MT4514, MT4515, MT4526)'
+        list_of_modules = ['MT3505', 'MT4003', 'MT4004', 'MT4512', 'MT4514', 'MT4515', 'MT4526']
+        number_of_matching_modules = len(set.intersection(set(list_of_modules), set(previously_taken_modules)))
+        if number_of_matching_modules <2:
+            missed_prerequisites_list.append('Student is missing prerequisite [' + prerequisites + '] for module MT5867')
+            
+    # now check anti-requisites:
+    # to do so, get the anti-requisites
+    antirequisites = module_catalogue[module_catalogue['Module code'] == module]['Antirequisites'].values[0]
+    if isinstance(antirequisites, str):
+        anti_module_codes = re.findall(r'[A-Z]{2}\d{4}', antirequisites)
+        for module_code in anti_module_codes:
+            if module_code in previously_taken_modules or module_code in simultaneously_taken_modules:
+                missed_prerequisites_list.append('Student selected antirequisite ' + module_code + ' for module ' + module)
+
+    
+    # merge all missed prerequisites into a string
+    missed_prerequisites = merge_list_to_long_string(missed_prerequisites_list)
+    adviser_recommendations = merge_list_to_long_string(adviser_recommendations_list)
+
+    return missed_prerequisites, adviser_recommendations
 
 def colour_code_print_statement(print_statement, is_advice = False):
     """Prints the given string in red if the string is not equal to 'None'.
@@ -229,23 +401,36 @@ def merge_list_to_long_string(a_list):
         contains all entries in a_list separated by a comma and a space
         is 'None' if a_list is empty
     """
-    if len(a_list) == 0:
+    # if len(a_list) == 0:
+        # a_string = 'None'
+    # elif len(a_list) == 1:
+        # if a_list[0] != 'None':
+            # a_string = a_list[0]
+        # else:
+            # a_string = 'None'
+    # else: 
+        # if a_list[0] != 'None':
+            # a_string = a_list[0]
+            # starting_index = 1
+        # else:
+            # a_string = a_list[1]
+            # starting_index = 2
+        # if len(a_list)>(starting_index):
+            # for list_entry in a_list[starting_index:]:
+                # a_string += ', ' + list_entry
+    
+    a_string = ''
+    first_item_found = False
+    for item in a_list:
+        if item != 'None':
+            if first_item_found:
+                a_string += ', ' + item
+            else:
+                a_string = item
+                first_item_found = False
+    
+    if a_string == '':
         a_string = 'None'
-    elif len(a_list) == 1:
-        if a_list[0] != 'None':
-            a_string = a_list[0]
-        else:
-            a_string = 'None'
-    else: 
-        if a_list[0] != 'None':
-            a_string = a_list[0]
-            starting_index = 1
-        else:
-            a_string = a_list[1]
-            starting_index = 2
-        if len(a_list)>(starting_index):
-            for list_entry in a_list[starting_index:]:
-                a_string += ', ' + list_entry
     
     return a_string
     
@@ -569,7 +754,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     form_filename = args.filename
     summary_data_frame = check_form_file(form_filename)
-    summary_data_frame = (summary_data_frame.style.apply(colour_code_passes, subset = ['Unmet programme requirements'], axis = 0).
+    summary_data_frame = (summary_data_frame.style.apply(colour_code_passes, subset = ['Unmet programme requirements', 'Missing prerequisites'], axis = 0).
                           apply(colour_recommendations, subset = ['Adviser recommendations'], axis = 0))
     writer = pd.ExcelWriter('summary_file.xlsx') 
     # Manually adjust the width of the last column
@@ -577,6 +762,7 @@ if __name__ == "__main__":
     writer.sheets['Sheet1'].set_column(0,0,width=5)
     writer.sheets['Sheet1'].set_column(1,1,width=10)
     writer.sheets['Sheet1'].set_column(2,2,width=30)
+    writer.sheets['Sheet1'].set_column(3,3,width=30)
     writer.sheets['Sheet1'].set_column(3,3,width=30)
     writer.save()
    # parse command line
