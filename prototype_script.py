@@ -199,6 +199,7 @@ def get_missing_prerequisites_for_module(module, student):
     # to do so, get the anti-requisites
     antirequisites = module_catalogue[module_catalogue['Module code'] == module]['Antirequisites'].values[0]
     if isinstance(antirequisites, str):
+        # check any listed module code individually
         anti_module_codes = re.findall(r'[A-Z]{2}\d{4}', antirequisites)
         for module_code in anti_module_codes:
             if module_code in previously_taken_modules or module_code in simultaneously_taken_modules:
@@ -756,15 +757,46 @@ if __name__ == "__main__":
     summary_data_frame = check_form_file(form_filename)
     summary_data_frame = (summary_data_frame.style.apply(colour_code_passes, subset = ['Unmet programme requirements', 'Missing prerequisites'], axis = 0).
                           apply(colour_recommendations, subset = ['Adviser recommendations'], axis = 0))
-    writer = pd.ExcelWriter('summary_file.xlsx') 
+
+    saving_name = 'summary_file.xlsx'
+    writer = pd.ExcelWriter(saving_name) 
     # Manually adjust the width of the last column
     summary_data_frame.to_excel(writer)
-    writer.sheets['Sheet1'].set_column(0,0,width=5)
-    writer.sheets['Sheet1'].set_column(1,1,width=10)
-    writer.sheets['Sheet1'].set_column(2,2,width=30)
-    writer.sheets['Sheet1'].set_column(3,3,width=30)
-    writer.sheets['Sheet1'].set_column(3,3,width=30)
+    # writer.book.close()
+    worksheet = writer.sheets['Sheet1']
+    # cell_format = writer.book.add_format({'font_size': '14'})
+    font = openpyxl.styles.Font(size=14)
+    worksheet.set_column(0,0,width=5)
+    worksheet.set_column(1,1,width=20)
+    worksheet.set_column(2,2,width=40)
+    worksheet.set_column(3,3,width=40)
+    worksheet.set_column(4,4,width=40)
+    # for column in 'ABCDEFG':
+        # col = worksheet.column_dimensions[column]
+        # column.font = font
+    # for row in worksheet.iter_cols():
+        # for cell in row:
+            # cell.font = font
     writer.save()
+    
+    new_workbook = openpyxl.load_workbook(saving_name)
+
+    # Access the active sheet
+    worksheet = new_workbook.active
+
+    # Set the font size for all cells in the worksheet
+    font_size = 14
+    font = openpyxl.styles.Font(size=font_size)
+    for row in worksheet.iter_rows():
+        for cell in row:
+            cell.font = font
+
+    # Make the first row bold
+    bold_font = openpyxl.styles.Font(size=font_size, bold=True)
+    for cell in worksheet[1]:
+        cell.font = bold_font
+    # Save the modified workbook
+    new_workbook.save(saving_name)
    # parse command line
    # get list of form files
    # for each form file check student
