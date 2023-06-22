@@ -24,7 +24,6 @@ def check_form_file(filename):
     student = parse_excel_form(filename)
     print('Processing student with ID')
     print(student.student_id)
-    # print('1234234234')
     print(' ')
     
     missed_programme_requirements, programme_adviser_recommendations = find_missing_programme_requirements(student)
@@ -37,17 +36,83 @@ def check_form_file(filename):
     print('The student is missing the following prerequisites')
     colour_code_print_statement(missed_prerequisites)
 
-    adviser_recommendations = merge_list_to_long_string([programme_adviser_recommendations, prerequisite_adviser_recommendations])
+    not_running_modules, scheduling_adviser_recommendations = find_not_running_modules(student)
+
+    print('The selected the following modules when they are not running')
+    colour_code_print_statement(not_running_modules)
+
+    adviser_recommendations = merge_list_to_long_string([programme_adviser_recommendations, prerequisite_adviser_recommendations, scheduling_adviser_recommendations])
     print('I have the following comments to the adviser:')
     colour_code_print_statement(adviser_recommendations, is_advice = True)
 
-    summary_data = [student.student_id, missed_programme_requirements, missed_prerequisites, adviser_recommendations]
-    summary_data_frame = pd.DataFrame([summary_data], columns = ['Student ID', 'Unmet programme requirements', 'Missing prerequisites', 'Adviser recommendations'])
+    summary_data = [student.student_id, missed_programme_requirements, missed_prerequisites, not_running_modules, adviser_recommendations]
+    summary_data_frame = pd.DataFrame([summary_data], columns = ['Student ID', 'Unmet programme requirements', 'Missing prerequisites', 'Modules not running', 'Adviser recommendations'])
 
-#     check_prerequisites(student)
-#     check_modules_are_running(student)
 #     check_timetable_clashes(student)
     return summary_data_frame
+
+def find_not_running_modules(student):
+    """Find all modules that the student is planning to take and which are not actually running in the year and semester
+    they are claiming.
+    
+    Parameters:
+    -----------
+    
+    student : instance of Student class
+        the student we are investigating
+        
+    Returns:
+    --------
+    
+    not_running_modules : string
+        comments on all modules that won't be running as intended.
+        
+    adviser_recommendations : string
+        advising recommendations, in this case may include warnings where scheduling is not finalised.
+    """
+    # make a list of not running modules
+    not_running_modules_list = []
+    adviser_recommendations_list = []
+
+    for _, row in student.honours_module_choices.iterrows():
+        # get the module data
+        planned_module_code = row['Module code']
+        planned_academic_year = row['Academic year']
+        planned_semester = row['Semester']
+        module_catalogue_entry = module_catalogue[module_catalogue['Module code'] == planned_module_code]
+        module_semester = module_catalogue_entry['Semester'].values[0]
+        # tell if the student picked the wrong semester
+        if planned_semester != module_semester:
+            not_running_modules_list.append('Selected module ' + planned_module_code + ' for Semester ' +
+                                            planned_semester + ' but it is actually running in ' + module_semester)
+        # figure out when the module is running
+        module_academic_year = module_catalogue_entry['Year'].values[0]
+        module_is_alternating_entry = module_catalogue_entry['Alternate years'].values[0]
+        if module_is_alternating_entry == 'Yes':
+            module_is_alternating = True
+        elif module_is_alternating_entry == 'No':
+            module_is_alternating = False
+        else:
+            raise(ValueError('cannot tell if module ' + planned_module_code + ' is alternating or not. Check the table entry.'))
+        # figure out which years the module is running in
+        list_of_running_academic_years = [module_academic_year]
+        start_year = int(module_academic_year[:4])
+        for repeat_index in range(4):
+            if module_is_alternating:
+                new_academic_year = str(start_year + 2*repeat_index) + '/' + str(start_year + 2*repeat_index + 1)
+            else:
+                new_academic_year = str(start_year + repeat_index) + '/' + str(start_year + repeat_index + 1)
+            list_of_running_academic_years.append(new_academic_year)
+        if planned_academic_year not in list_of_running_academic_years:
+            not_running_modules_list.append('Selected module ' + planned_module_code + ' is not running in academic year ' +
+                                            str(planned_academic_year))
+
+    # merge all missed prerequisites into a string
+    not_running_modules = merge_list_to_long_string(not_running_modules_list)
+    adviser_recommendations = merge_list_to_long_string(adviser_recommendations_list)
+    
+    return not_running_modules, adviser_recommendations
+
 
 def find_missing_prerequisites(student):
     """find any missing prerequisites or violated anti-requisites.
@@ -185,7 +250,8 @@ def get_missing_prerequisites_for_module(module, student):
                         parsed_prerequisites = parsed_prerequisites.replace(module_code, 'False')
             prerequisites_are_met = eval(parsed_prerequisites)
             if not prerequisites_are_met:
-                missed_prerequisites_list.append('Student is missing prerequisite [' + prerequisites+ '] for module ' + module)
+                missed_prerequisites_list.append('Student is missing prerequisite [' + prerequisites+ '] for module ' + module + 
+                                                 ' ([' + parsed_prerequisites + '])')
             
     # MT5867 is a special case that I don't know how to parse automatically:
     if module == 'MT5867':
@@ -402,24 +468,6 @@ def merge_list_to_long_string(a_list):
         contains all entries in a_list separated by a comma and a space
         is 'None' if a_list is empty
     """
-    # if len(a_list) == 0:
-        # a_string = 'None'
-    # elif len(a_list) == 1:
-        # if a_list[0] != 'None':
-            # a_string = a_list[0]
-        # else:
-            # a_string = 'None'
-    # else: 
-        # if a_list[0] != 'None':
-            # a_string = a_list[0]
-            # starting_index = 1
-        # else:
-            # a_string = a_list[1]
-            # starting_index = 2
-        # if len(a_list)>(starting_index):
-            # for list_entry in a_list[starting_index:]:
-                # a_string += ', ' + list_entry
-    
     a_string = ''
     first_item_found = False
     for item in a_list:
@@ -534,14 +582,14 @@ def parse_excel_form(filename):
     for remaining_honours_year in range(current_honours_year,expected_honours_years + 1):
         year_key = 'Year ' + str(remaining_honours_year)
         calendar_year = 22 + remaining_honours_year
-        calendar_year_string = '20' + str(calendar_year) + '/' + str(calendar_year + 1)
+        calendar_year_string = '20' + str(calendar_year) + '/20' + str(calendar_year + 1)
         for semester_number in [1,2]:
             semester_modules = get_modules_under_header(sheet, year_key + ' of Honours: Semester ' + str(semester_number)) 
             for module in semester_modules:
                 module_table.append([year_key, calendar_year_string, 'S' + str(semester_number), module,])
 
     # Turn this all into a nice pandas data frame
-    honours_module_choices = pd.DataFrame(module_table, columns = ['Honours year', 'Calendar year', 'Semester', 'Module code'])
+    honours_module_choices = pd.DataFrame(module_table, columns = ['Honours year', 'Academic year', 'Semester', 'Module code'])
     
     this_student = Student(student_id, 
                            programme_name, 
@@ -597,7 +645,7 @@ class Student():
             
         honours_module_choices : Pandas data frame
             The honours module codes that the studen thas selected. The data frame current contains
-            the following columns ['Honours year', 'Calendar year', 'Semester', 'Module code']
+            the following columns ['Honours year', 'Academic year', 'Semester', 'Module code']
         """
         
         self.student_id = student_id
@@ -755,7 +803,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     form_filename = args.filename
     summary_data_frame = check_form_file(form_filename)
-    summary_data_frame = (summary_data_frame.style.apply(colour_code_passes, subset = ['Unmet programme requirements', 'Missing prerequisites'], axis = 0).
+    summary_data_frame = (summary_data_frame.style.apply(colour_code_passes, subset = ['Unmet programme requirements', 'Missing prerequisites', 'Modules not running'], axis = 0).
                           apply(colour_recommendations, subset = ['Adviser recommendations'], axis = 0))
 
     saving_name = 'summary_file.xlsx'
@@ -771,6 +819,7 @@ if __name__ == "__main__":
     worksheet.set_column(2,2,width=40)
     worksheet.set_column(3,3,width=40)
     worksheet.set_column(4,4,width=40)
+    worksheet.set_column(5,5,width=40)
     # for column in 'ABCDEFG':
         # col = worksheet.column_dimensions[column]
         # column.font = font
