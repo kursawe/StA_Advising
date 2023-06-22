@@ -52,8 +52,8 @@ def check_form_file(filename):
     print('I have the following comments to the adviser:')
     colour_code_print_statement(adviser_recommendations, is_advice = True)
 
-    summary_data = [student.student_id, missed_programme_requirements, missed_prerequisites, not_running_modules, adviser_recommendations]
-    summary_data_frame = pd.DataFrame([summary_data], columns = ['Student ID', 'Unmet programme requirements', 'Missing prerequisites', 'Modules not running', 'Adviser recommendations'])
+    summary_data = [student.student_id, missed_programme_requirements, missed_prerequisites, not_running_modules, timetable_clashes, adviser_recommendations]
+    summary_data_frame = pd.DataFrame([summary_data], columns = ['Student ID', 'Unmet programme requirements', 'Missing prerequisites', 'Modules not running', 'Timetable clashes', 'Adviser recommendations'])
 
     return summary_data_frame
 
@@ -143,7 +143,7 @@ def find_clashing_timeslots_and_modules(module_dictionary, honours_year, semeste
         for module, timeslot_list in module_dictionary.items():
             if timeslot in timeslot_list:
                 clashing_module_codes.append(module)
-        warning_string = 'Found timeslot clash for ' + honours_year + ' ' + semester + ' at ' + timeslot + ' between modules '
+        warning_string = 'Clash for ' + honours_year + ' ' + semester + ' at ' + timeslot + ' between modules '
         for module_index, module in enumerate(clashing_module_codes):
             warning_string += module
             if module_index < len(clashing_module_codes) - 1:
@@ -955,16 +955,15 @@ if __name__ == "__main__":
     args = parser.parse_args()
     form_filename = args.filename
     summary_data_frame = check_form_file(form_filename)
-    summary_data_frame = (summary_data_frame.style.apply(colour_code_passes, subset = ['Unmet programme requirements', 'Missing prerequisites', 'Modules not running'], axis = 0).
+    summary_data_frame = (summary_data_frame.style.apply(colour_code_passes, subset = ['Unmet programme requirements', 'Missing prerequisites', 'Modules not running',
+                                                                                       'Timetable clashes'], axis = 0).
                           apply(colour_recommendations, subset = ['Adviser recommendations'], axis = 0))
 
     saving_name = 'summary_file.xlsx'
     writer = pd.ExcelWriter(saving_name) 
     # Manually adjust the width of the last column
     summary_data_frame.to_excel(writer)
-    # writer.book.close()
     worksheet = writer.sheets['Sheet1']
-    # cell_format = writer.book.add_format({'font_size': '14'})
     font = openpyxl.styles.Font(size=14)
     worksheet.set_column(0,0,width=5)
     worksheet.set_column(1,1,width=20)
@@ -972,12 +971,7 @@ if __name__ == "__main__":
     worksheet.set_column(3,3,width=40)
     worksheet.set_column(4,4,width=40)
     worksheet.set_column(5,5,width=40)
-    # for column in 'ABCDEFG':
-        # col = worksheet.column_dimensions[column]
-        # column.font = font
-    # for row in worksheet.iter_cols():
-        # for cell in row:
-            # cell.font = font
+    worksheet.set_column(6,6,width=40)
     writer.save()
     
     new_workbook = openpyxl.load_workbook(saving_name)
@@ -998,7 +992,3 @@ if __name__ == "__main__":
         cell.font = bold_font
     # Save the modified workbook
     new_workbook.save(saving_name)
-   # parse command line
-   # get list of form files
-   # for each form file check student
-   # check_form_file
