@@ -4,6 +4,7 @@ import os
 import pandas as pd
 import termcolor
 import re
+import collections
 
 # os.system('color')
 
@@ -38,18 +39,169 @@ def check_form_file(filename):
 
     not_running_modules, scheduling_adviser_recommendations = find_not_running_modules(student)
 
-    print('The selected the following modules when they are not running')
+    print('The student selected the following modules when they are not running')
     colour_code_print_statement(not_running_modules)
 
-    adviser_recommendations = merge_list_to_long_string([programme_adviser_recommendations, prerequisite_adviser_recommendations, scheduling_adviser_recommendations])
+    timetable_clashes, timetable_adviser_recommendations = find_timetable_clashes(student)
+    print('I found the following timetable clashes')
+    colour_code_print_statement(timetable_clashes)
+
+    adviser_recommendations = merge_list_to_long_string([programme_adviser_recommendations, prerequisite_adviser_recommendations, 
+                                                         scheduling_adviser_recommendations, timetable_adviser_recommendations])
+
     print('I have the following comments to the adviser:')
     colour_code_print_statement(adviser_recommendations, is_advice = True)
 
     summary_data = [student.student_id, missed_programme_requirements, missed_prerequisites, not_running_modules, adviser_recommendations]
     summary_data_frame = pd.DataFrame([summary_data], columns = ['Student ID', 'Unmet programme requirements', 'Missing prerequisites', 'Modules not running', 'Adviser recommendations'])
 
-#     check_timetable_clashes(student)
     return summary_data_frame
+
+def find_timetable_clashes(student):
+    """Find all modules that the student is planning to take and which are not actually running in the year and semester
+    they are claiming.
+    
+    Parameters:
+    -----------
+    
+    student : instance of Student class
+        the student we are investigating
+        
+    Returns:
+    --------
+    
+    timetable_clashes : string
+        comments on all scheduled timetable clashes.
+        
+    adviser_recommendations : string
+        advising recommendations, in this case may include warnings where scheduling is not finalised, or when we couldn't parse all scheduled events.
+    """
+    # make a list of timetable clashes
+    timetable_clashes_list = []
+    adviser_recommendations_list = []
+    
+    # get remaining honours years
+    remaining_honours_years = student.honours_module_choices['Honours year'].unique()
+    for honours_year in remaining_honours_years:
+        for semester in ['S1', 'S2']:
+            semester_modules = student.honours_module_choices[(student.honours_module_choices['Semester'] == semester) &  
+                                                               (student.honours_module_choices['Honours year'] == honours_year)]['Module code'].to_list()
+            timeslot_dictionary = dict()
+            for module in semester_modules:
+                these_timeslots = get_timeslots_for_module(module)
+                timeslot_dictionary[module] = these_timeslots
+            
+            timetable_clashes_list += find_clashing_timeslots_and_modules(timeslot_dictionary, honours_year, semester)
+            reduced_timeslot_dictionary = timeslot_dictionary.copy()
+            for _,value in reduced_timeslot_dictionary.items():
+                for entry in value:
+                    entry.replace(' (even weeks)','')
+            timetable_clashes_list += find_clashing_timeslots_and_modules(timeslot_dictionary, honours_year, semester)
+
+            reduced_timeslot_dictionary = timeslot_dictionary.copy()
+            for _,value in reduced_timeslot_dictionary.items():
+                for entry in value:
+                    entry.replace(' (odd weeks)','')
+            timetable_clashes_list += find_clashing_timeslots_and_modules(timeslot_dictionary, honours_year, semester)
+
+    # merge all found problems into a string
+    timetable_clashes = merge_list_to_long_string(timetable_clashes_list)
+    adviser_recommendations = merge_list_to_long_string(adviser_recommendations_list)
+    
+    return timetable_clashes, adviser_recommendations
+ 
+def find_clashing_timeslots_and_modules(module_dictionary, honours_year, semester):
+    """Given timeslot and a dictionary of concurrently running modules return the timeslots that are clashing and the clashing module codes
+    
+    Parameters:
+    -----------
+    
+    module_dictionary : dictionary
+        keys are module codes, values are lists of strings, which represent timeslots
+    
+    honours_year : string
+        the honours year
+        
+    semester : string
+        the semester
+    
+    Returns:
+    --------
+
+    timetable_clashes_list : list of strings
+        warning messages about clashing modules
+    """
+    timetable_clashes_list = []
+    all_timeslots = []
+    for module, timeslots in module_dictionary.items():
+        all_timeslots += timeslots
+
+    my_timeslot_counter = collections.Counter(all_timeslots)
+    duplicate_entries = [timeslot for timeslot, count in my_timeslot_counter.items() if count > 1]
+    for timeslot in duplicate_entries:
+        clashing_module_codes = []
+        for module, timeslot_list in module_dictionary.items():
+            if timeslot in timeslot_list:
+                clashing_module_codes.append(module)
+        warning_string = 'Found timeslot clash for ' + honours_year + ' ' + semester + ' at ' + timeslot + ' between modules '
+        for module_index, module in enumerate(clashing_module_codes):
+            warning_string += module
+            if module_index < len(clashing_module_codes) - 1:
+                warning_string += ' and '
+        timetable_clashes_list.append(warning_string)
+    
+    return timetable_clashes_list
+   
+def get_timeslots_for_module(module):
+    """Returns all timeslots for a module
+    
+    Parameters:
+    -----------
+    
+    module : string
+        the module code we are interested in.
+        
+    Returns:
+    --------
+    
+    timeslots : list of strings
+        all timeslots that the module is running in
+    """
+    timeslot_entry = module_catalogue[module_catalogue['Module code'] == module]['Timetable'].values[0]
+    timeslots = []
+    if isinstance(timeslot_entry,str):
+        timeslot_splits = timeslot_entry.split()
+        first_timeslot = timeslot_splits[0]
+        if timeslot_splits[2].startswith('('):
+            second_timeslot = first_timeslot + ' ' + timeslot_splits[4][:-1]
+            third_timeslot = first_timeslot + ' ' + timeslot_splits[5]
+            if third_timeslot.endswith(','):
+                third_timeslot = third_timeslot[:-1]
+            first_timeslot += ' ' + timeslot_splits[1] + ' ' + timeslot_splits[2] + ' ' + timeslot_splits[3][:-1]
+            timeslots += [first_timeslot, second_timeslot, third_timeslot]
+            if len(timeslot_splits) > 7:
+                remaining_splits = timeslot_splits[6:]
+            else:
+                remaining_splits = []
+        else:
+            first_timeslot += ' ' + timeslot_splits[1]
+            if first_timeslot.endswith(','):
+                first_timeslot = first_timeslot[:-1]
+            if len(timeslot_splits) > 2:
+                remaining_splits = timeslot_splits[2:]
+            else:
+                remaining_splits = []
+            timeslots.append(first_timeslot)
+        
+        current_index = 0
+        while current_index < len(remaining_splits):
+            this_timeslot = remaining_splits[current_index] + ' ' +  remaining_splits[current_index + 1]
+            if this_timeslot.endswith(','):
+                this_timeslot = this_timeslot[:-1]
+            timeslots.append(this_timeslot)
+            current_index +=2
+        
+    return timeslots
 
 def find_not_running_modules(student):
     """Find all modules that the student is planning to take and which are not actually running in the year and semester
@@ -107,7 +259,7 @@ def find_not_running_modules(student):
             not_running_modules_list.append('Selected module ' + planned_module_code + ' is not running in academic year ' +
                                             str(planned_academic_year))
 
-    # merge all missed prerequisites into a string
+    # merge all found problems into a string
     not_running_modules = merge_list_to_long_string(not_running_modules_list)
     adviser_recommendations = merge_list_to_long_string(adviser_recommendations_list)
     
