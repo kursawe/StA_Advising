@@ -3,6 +3,8 @@ import openpyxl
 import pandas as pd
 import termcolor
 from .student import *
+import docx
+import pathlib
 
 
 module_catalogue_location = os.path.join(os.path.dirname(__file__),'..','module_catalogue','Module_catalogue.xlsx') 
@@ -413,15 +415,18 @@ def save_summary_data_frame(data_frame, filename):
     """
 
     if not filename.endswith('.xlsx'):
-        filename += '.xlsx'
+        if filename.endswith('.docx'):
+            filename = filename[:-5] + '.xlsx'
+        else:
+            filename += '.xlsx'
         
-    data_frame = (data_frame.style.apply(colour_code_passes, subset = ['Unmet programme requirements', 'Missing prerequisites', 'Modules not running',
+    styled_data_frame = (data_frame.style.apply(colour_code_passes, subset = ['Unmet programme requirements', 'Missing prerequisites', 'Modules not running',
                                                                                        'Timetable clashes'], axis = 0).
                           apply(colour_recommendations, subset = ['Adviser recommendations'], axis = 0))
 
     writer = pd.ExcelWriter(filename) 
     # Manually adjust the width of each column
-    data_frame.to_excel(writer)
+    styled_data_frame.to_excel(writer)
     worksheet = writer.sheets['Sheet1']
     font = openpyxl.styles.Font(size=14)
     worksheet.set_column(0,0,width=5)
@@ -458,6 +463,62 @@ def save_summary_data_frame(data_frame, filename):
     # Save the modified workbook
     reloaded_workbook.save(filename)
     
+    # Now let's also save into word
+    filename_base = filename[:-5]
+    word_file_name = filename_base + '.docx'
+    
+    word_document = docx.Document()
+    
+    for _,row in data_frame.iterrows():
+        paragraph = word_document.add_paragraph()
+        run = paragraph.add_run('Student ID: ' + str(row['Student ID']))
+        run.add_break()
+        run = paragraph.add_run('Name: ' + row['Name'])
+        run.add_break()
+        run = paragraph.add_run('Programme: ' + row['Programme'])
+        run.add_break()
+        run = paragraph.add_run('The student is missing the following programme requirements:')
+        run.add_break()
+        run = paragraph.add_run(row['Unmet programme requirements'])
+        if row['Unmet programme requirements']!= 'None':
+            run.font.color.rgb = docx.shared.RGBColor(255,0,0)
+        else:
+            run.font.color.rgb = docx.shared.RGBColor(0,128,0)
+        run.add_break()
+        run = paragraph.add_run('The student is missing the following prerequisites:')
+        run.add_break()
+        run = paragraph.add_run(row['Missing prerequisites'])
+        if row['Missing prerequisites']!= 'None':
+            run.font.color.rgb = docx.shared.RGBColor(255,0,0)
+        else:
+            run.font.color.rgb = docx.shared.RGBColor(0,128,0)
+        run.add_break()
+        run = paragraph.add_run('The student selected the following modules when they are not running:')
+        run.add_break()
+        run = paragraph.add_run(row['Modules not running'])
+        if row['Modules not running']!= 'None':
+            run.font.color.rgb = docx.shared.RGBColor(255,0,0)
+        else:
+            run.font.color.rgb = docx.shared.RGBColor(0,128,0)
+        run.add_break()
+        run = paragraph.add_run('I found the following timetable clashes:')
+        run.add_break()
+        run = paragraph.add_run(row['Timetable clashes'])
+        if row['Timetable clashes']!= 'None':
+            run.font.color.rgb = docx.shared.RGBColor(255,0,0)
+        else:
+            run.font.color.rgb = docx.shared.RGBColor(0,128,0)
+        run.add_break()
+        run = paragraph.add_run('I have the following comments for the adviser')
+        run.add_break()
+        run = paragraph.add_run(row['Adviser recommendations'])
+        if row['Adviser recommendations']!= 'None':
+            run.font.color.rgb = docx.shared.RGBColor(255,102,0)
+        run.add_break()
+        run.add_break()
+        
+        word_document.save(word_file_name)
+   
 def process_folder(folder_name):
     """Finds all student formfiles (all excel files) in a folder and performs advising checks on them
     

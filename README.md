@@ -10,10 +10,19 @@ python advising_tool.py form_file.xlsx
 
 If you wish to process a folder of form files, simply replace the `form_file.xlsx` with the folder name.
 
-The tool will save it's findings into an excel file and also print everything to command line. The output file is `summary_file.xlsx`.
+The tool will save it's findings into an excel file as well as a Microsoft Word file, and also print everything to command line. The output files are `summary_file.xlsx` and `summary_file.xlsx`. You can save into different files by typing
 
+```
+python advising_tool.py -o other_file_name.xlsx form_file.xlsx
+```
 
-If you would prefer other output, let Jochen know.
+One can get a brief description of the command line arguments by typing
+
+```
+python advising_tool.py --help
+```
+
+If you would prefer other output formats, let Jochen know.
 
 # Installation and file setup
 Installation of this tool requires three steps: (i) Installing python dependencies, (ii) Downloading the code from this repository and (iii) Donwloading student data files from MMS
@@ -25,6 +34,7 @@ If you don't have python installed on your computer, I recommend installing anac
 pip install openpyxl
 pip install pandas
 pip install termcolor
+pip install python-docx
 ```
 
 ## Getting the code
