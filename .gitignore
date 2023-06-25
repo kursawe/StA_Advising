@@ -1,3 +1,5 @@
+# never add senstive student data
+/student_data/*
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
