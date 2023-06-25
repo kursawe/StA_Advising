@@ -1,11 +1,6 @@
 from advising_code import *
 import argparse
-import openpyxl
 import os
-import pandas as pd
-import termcolor
-import re
-import collections
 
 # os.system('color')
 
