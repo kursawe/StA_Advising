@@ -11,7 +11,7 @@ import collections
 module_catalogue_location = os.path.join(os.path.dirname(__file__),'module_catalogue','Module_catalogue.xlsx') 
 module_catalogue = pd.read_excel(module_catalogue_location)
 
-def check_form_file(filename):
+def process_form_file(filename):
     """preforms all advising checks on the 
     submitted form.
     
@@ -22,9 +22,32 @@ def check_form_file(filename):
         path to the file that is being investigated,
         i.e. a filled-in module choice form
     """ 
-    student = parse_excel_form(filename)
-    print('Processing student with ID')
-    print(student.student_id)
+    student_or_warning = parse_excel_form(filename)
+    if isinstance(student_or_warning, str):
+        if student_or_warning == 'No student ID':
+            warning_message = 'Could not process ' + filename + '. The file does not contain a valid student ID.'
+        elif student_or_warning.startswith('contains invalid student ID'):
+            warning_message = 'Could not process ' + filename + '. The file ' + student_or_warning
+        elif student_or_warning.startswith('Do not recognise student programme for parsing:'):
+            warning_message = 'Could not process ' + filename + '. ' + student_or_warning
+        colour_code_print_statement(warning_message)
+        summary_data =[000000000, 
+                    'Unknown',
+                    'Unknown',
+                    0,
+                    warning_message, ' ', ' ', ' ', ' ']
+
+        summary_data_frame = generate_summary_data_frame_from_entries(summary_data)
+
+        return summary_data_frame
+    
+    student = student_or_warning
+    print('Processing file ')
+    print(filename)
+    print(' ')
+    print('Student ID: ' + str(student.student_id))
+    print('Name: ' + student.full_name)
+    print('Programme: ' + student.programme_name)
     print(' ')
     
     missed_programme_requirements, programme_adviser_recommendations = find_missing_programme_requirements(student)
@@ -34,16 +57,16 @@ def check_form_file(filename):
 
     missed_prerequisites, prerequisite_adviser_recommendations = find_missing_prerequisites(student)
     
-    print('The student is missing the following prerequisites')
+    print('The student is missing the following prerequisites:')
     colour_code_print_statement(missed_prerequisites)
 
     not_running_modules, scheduling_adviser_recommendations = find_not_running_modules(student)
 
-    print('The student selected the following modules when they are not running')
+    print('The student selected the following modules when they are not running:')
     colour_code_print_statement(not_running_modules)
 
     timetable_clashes, timetable_adviser_recommendations = find_timetable_clashes(student)
-    print('I found the following timetable clashes')
+    print('I found the following timetable clashes:')
     colour_code_print_statement(timetable_clashes)
 
     adviser_recommendations = merge_list_to_long_string([programme_adviser_recommendations, prerequisite_adviser_recommendations, 
@@ -52,11 +75,42 @@ def check_form_file(filename):
     print('I have the following comments to the adviser:')
     colour_code_print_statement(adviser_recommendations, is_advice = True)
 
-    summary_data = [student.student_id, missed_programme_requirements, missed_prerequisites, not_running_modules, timetable_clashes, adviser_recommendations]
-    summary_data_frame = pd.DataFrame([summary_data], columns = ['Student ID', 'Unmet programme requirements', 'Missing prerequisites', 'Modules not running', 'Timetable clashes', 'Adviser recommendations'])
+    summary_data = [student.student_id, 
+                    student.full_name,
+                    student.programme_name,
+                    student.current_honours_year,
+                    missed_programme_requirements, missed_prerequisites, not_running_modules, timetable_clashes, adviser_recommendations]
+
+    summary_data_frame = generate_summary_data_frame_from_entries(summary_data)
+    
+    summary_data_frame.sort_values(by='Student ID')
 
     return summary_data_frame
 
+def generate_summary_data_frame_from_entries(data_list):
+    """Generates the summary data frame from the entries for one student.
+    
+    Parameters:
+    -----------
+
+    data_list : list
+        list entries vary in type, see the expected order of entries in the code below.
+        
+    Returns :
+    ---------
+    
+    summary_data_frame : pandas data frame
+        the pandas data frame containing the list data and the correct headers.
+    """
+    summary_data_frame = pd.DataFrame([data_list], columns = ['Student ID', 
+                                                                 'Name',
+                                                                 'Programme',
+                                                                 'Hon. year',
+                                                                 'Unmet programme requirements', 'Missing prerequisites', 'Modules not running', 'Timetable clashes', 'Adviser recommendations'])
+    
+    return summary_data_frame
+   
+    
 def find_timetable_clashes(student):
     """Find all modules that the student is planning to take and which are not actually running in the year and semester
     they are claiming.
@@ -104,6 +158,8 @@ def find_timetable_clashes(student):
                     entry.replace(' (odd weeks)','')
             timetable_clashes_list += find_clashing_timeslots_and_modules(timeslot_dictionary, honours_year, semester)
 
+    # remove duplicate items
+    timetable_clashes_list = list(set(timetable_clashes_list))
     # merge all found problems into a string
     timetable_clashes = merge_list_to_long_string(timetable_clashes_list)
     adviser_recommendations = merge_list_to_long_string(adviser_recommendations_list)
@@ -138,16 +194,35 @@ def find_clashing_timeslots_and_modules(module_dictionary, honours_year, semeste
 
     my_timeslot_counter = collections.Counter(all_timeslots)
     duplicate_entries = [timeslot for timeslot, count in my_timeslot_counter.items() if count > 1]
+    clashing_module_codes = []
     for timeslot in duplicate_entries:
-        clashing_module_codes = []
+        these_clashing_module_codes = []
         for module, timeslot_list in module_dictionary.items():
             if timeslot in timeslot_list:
-                clashing_module_codes.append(module)
-        warning_string = 'Clash for ' + honours_year + ' ' + semester + ' at ' + timeslot + ' between modules '
-        for module_index, module in enumerate(clashing_module_codes):
+                these_clashing_module_codes.append(module)
+        these_clashing_module_codes.sort()
+        these_clashing_module_codes = tuple(these_clashing_module_codes)
+        clashing_module_codes.append(these_clashing_module_codes)
+        
+    unique_module_clashes = list(set(frozenset(entry) for entry in clashing_module_codes))
+    for module_combination in unique_module_clashes:
+        all_timeslot_sets = list()
+        for module in module_combination:
+            module_timeslots = set(module_dictionary[module])
+            all_timeslot_sets.append(module_timeslots)
+        affected_timeslots = set.intersection(*all_timeslot_sets)
+        # sort the list so that we can avoid duplicate warning in the if statement below
+        warning_string = 'Clash for ' + honours_year + ' ' + semester + ' between modules '
+        for module_index, module in enumerate(module_combination):
             warning_string += module
-            if module_index < len(clashing_module_codes) - 1:
+            if module_index < len(module_combination) - 1:
                 warning_string += ' and '
+        warning_string += ' at ' 
+        for timeslot_index, timeslot in enumerate(affected_timeslots):
+            warning_string += timeslot
+            if timeslot_index < len(affected_timeslots) - 1:
+                warning_string += ' and '
+        # if warning_string not in timetable_clashes_list:
         timetable_clashes_list.append(warning_string)
     
     return timetable_clashes_list
@@ -167,12 +242,22 @@ def get_timeslots_for_module(module):
     timeslots : list of strings
         all timeslots that the module is running in
     """
-    timeslot_entry = module_catalogue[module_catalogue['Module code'] == module]['Timetable'].values[0]
+    if len(module_catalogue[module_catalogue['Module code'] == module]) == 0:
+        # The module does not exist, we have already flagged this
+        timeslot_entry = float('nan')
+    else:
+        timeslot_entry = module_catalogue[module_catalogue['Module code'] == module]['Timetable'].values[0]
     timeslots = []
+    
+    # special treatment for MT4112 bewcause I can't be bothered to update the parsing below, it'd be a pain
+    if timeslot_entry == '10am Wed (odd weeks), 10am Fri (odd weeks)':
+        timeslots = ['10am Wed (odd weeks)', '10am Fri (odd weeks)']
+        return timeslots
+
     if isinstance(timeslot_entry,str):
         timeslot_splits = timeslot_entry.split()
         first_timeslot = timeslot_splits[0]
-        if timeslot_splits[2].startswith('('):
+        if len(timeslot_splits) > 2 and timeslot_splits[2].startswith('('):
             second_timeslot = first_timeslot + ' ' + timeslot_splits[4][:-1]
             third_timeslot = first_timeslot + ' ' + timeslot_splits[5]
             if third_timeslot.endswith(','):
@@ -231,10 +316,14 @@ def find_not_running_modules(student):
         planned_module_code = row['Module code']
         planned_academic_year = row['Academic year']
         planned_semester = row['Semester']
+        if len(module_catalogue[module_catalogue['Module code'] == planned_module_code]) == 0:
+            # the module does not exist, we have already flagged this so we are just going to
+            # skip this here
+            continue
         module_catalogue_entry = module_catalogue[module_catalogue['Module code'] == planned_module_code]
         module_semester = module_catalogue_entry['Semester'].values[0]
         # tell if the student picked the wrong semester
-        if planned_semester != module_semester:
+        if planned_semester != module_semester and module_semester != 'Full Year':
             not_running_modules_list.append('Selected module ' + planned_module_code + ' for Semester ' +
                                             planned_semester + ' but it is actually running in ' + module_semester)
         # figure out when the module is running
@@ -353,8 +442,14 @@ def get_missing_prerequisites_for_module(module, student):
             modules_taken_in_same_year.append(row['Module code'])
 
     # get pre-requisite string for that module
-    prerequisites = module_catalogue[module_catalogue['Module code'] == module]['Prerequisites'].values[0]
-    
+    if len(module_catalogue[module_catalogue['Module code'] == module])> 0:
+        prerequisites = module_catalogue[module_catalogue['Module code'] == module]['Prerequisites'].values[0]
+    else:
+        # The student has chosen a module that doesn't exist. We have flagged this already in the programme requirements,
+        # so don't need to do that again here.
+        # choosing this because that's what pandas would return if the entry was just empty
+        prerequisites = float('nan')
+
     # if the prerequsites are not empty
     if  isinstance(prerequisites,str) and module!='MT5867':
         prerequisite_list = prerequisites.split()
@@ -368,6 +463,8 @@ def get_missing_prerequisites_for_module(module, student):
         elif len(prerequisite_list) == 3:
             if prerequisites == 'Letter of agreement':
                 adviser_recommendations_list.append('Module ' + module + ' requires a letter of agreement')
+        elif prerequisites == 'Students must have gained admission onto an MSc programme':
+            missed_prerequisites_list.append('Student cannot take module ' + module + ' as this module is only available to Msc students')
         else:
             #now there is a boolean statement coming, so we turn the module codes into boolean strings and evaluate the outcome
             # (thanks, ChatGPT)
@@ -415,7 +512,14 @@ def get_missing_prerequisites_for_module(module, student):
             
     # now check anti-requisites:
     # to do so, get the anti-requisites
-    antirequisites = module_catalogue[module_catalogue['Module code'] == module]['Antirequisites'].values[0]
+    if len(module_catalogue[module_catalogue['Module code'] == module])> 0:
+        antirequisites = module_catalogue[module_catalogue['Module code'] == module]['Antirequisites'].values[0]
+    else:
+        # The student has chosen a module that doesn't exist. We have flagged this already in the programme requirements,
+        # so don't need to do that again here.
+        # choosing this because that's what pandas would return if the entry was just empty
+        antirequisites = float('nan')
+
     if isinstance(antirequisites, str):
         # check any listed module code individually
         anti_module_codes = re.findall(r'[A-Z]{2}\d{4}', antirequisites)
@@ -475,6 +579,22 @@ def find_missing_programme_requirements(student):
     
     list_of_missed_requirements = []
     list_of_adviser_recommendations = []
+    
+    # do some sanity check on the module selection first. 
+    if len(set(student.full_module_list)) != len(student.full_module_list):
+        double_entry_counter = collections.Counter(student.full_module_list)
+        duplicate_entries = [module for module, count in double_entry_counter.items() if count > 1]
+        warning_string = 'Student selected the following modules twice: '
+        for entry in duplicate_entries:
+            warning_string += entry
+            if entry != duplicate_entries[-1]:
+                warning_string += ', '
+        list_of_missed_requirements.append(warning_string)
+    
+    for module in student.planned_honours_modules:
+        if module.startswith('MT') and module not in module_catalogue['Module code'].values:
+            list_of_missed_requirements.append('Student is planning to take ' + module + ' (which does not exist)')
+
     if student.programme_name == 'Bachelor of Science (Honours) Mathematics':
         # check the credit load
         missed_requirement, adviser_recommendation = check_for_120_credits_each_year(student)
@@ -541,6 +661,8 @@ def find_missing_programme_requirements(student):
                                                                                         and 'MT5' not in module]
         if len(list_of_planned_non_maths_modules) >0:
             list_of_adviser_recommendations.append('Student is planning to take non-MT modules, which requires permission')
+    else:
+        list_of_missed_requirements.append('No programme requirements available')
 
     # merge all missed requirements into a string
     missed_requirements = merge_list_to_long_string(list_of_missed_requirements)
@@ -628,7 +750,7 @@ def merge_list_to_long_string(a_list):
                 a_string += ', ' + item
             else:
                 a_string = item
-                first_item_found = False
+                first_item_found = True
     
     if a_string == '':
         a_string = 'None'
@@ -649,13 +771,17 @@ def parse_excel_form(filename):
     Returns:
     --------
 
-    student : instance of Student class
-        an object with student attributes.
+    student : instance of Student class or string
+        an object with student attributes. If it's a string then it's a warning
+        message about what went wrong
     """
     # open the form file and read in the student ID
     this_workbook = openpyxl.load_workbook(filename=filename)
     sheet = this_workbook.active
     student_id = sheet["D5"].value
+    if not isinstance(student_id, int):
+        return 'No student ID'
+        
     
     # Now that we have the student ID we can look up the student in the database:
     current_directory = os.path.dirname(os.path.abspath(__file__))
@@ -677,12 +803,15 @@ def parse_excel_form(filename):
     student_not_yet_found = True
 
     data_base_index = 0
-    while student_not_yet_found:
+    while student_not_yet_found and data_base_index < len(data_bases):
         this_data_base = data_bases[data_base_index]
         if student_id in this_data_base['Student ID'].to_numpy():
             student_not_yet_found = False
             student_data_base = this_data_base[this_data_base['Student ID'] == student_id]
         data_base_index += 1
+    
+    if student_not_yet_found:
+        return 'contains invalid student ID ' + str(student_id)
 
     # infer the year of study from the earliest module taken
     data_of_module_years = student_data_base['Year'].str.slice(0,4).astype('int')
@@ -699,9 +828,23 @@ def parse_excel_form(filename):
     
     #identify the programme of the student
     programme_entries = student_data_base['Programme name'].unique()    
-    assert(len(programme_entries == 1))
+    assert(len(programme_entries) == 1)
     programme_name = programme_entries[0]
     
+    given_name_entries = student_data_base['Given names'].unique()
+    assert(len(given_name_entries) == 1)
+    given_name = given_name_entries[0]
+    
+    family_name_entries = student_data_base['Family name'].unique()
+    assert(len(family_name_entries) == 1)
+    family_name = family_name_entries[0]
+    
+    full_name = given_name + ' ' + family_name
+
+    email_entries = student_data_base['Email'].unique()
+    assert(len(email_entries) == 1)
+    email = email_entries[0]
+
     # Figure out what year they are in and how many they have left
     if 'Bachelor of Science' in programme_name:
         no_of_programme_years = 4
@@ -709,10 +852,20 @@ def parse_excel_form(filename):
     elif 'Master in Mathematics' in programme_name:
         no_of_programme_years = 5
         expected_honours_years = 3
-    else: 
-        print('what the heck kind of programme is that?? ' + programme_name)
+    elif 'Master of Arts (Honours)' in programme_name: 
+        no_of_programme_years = 4
+        expected_honours_years = 2
+    elif 'Master in Chemistry (Honours) Chemistry with Mathematics' == programme_name:
+        no_of_programme_years = 5
+        expected_honours_years = 3
+    elif 'Master in Physics (Honours) Mathematics and Theoretical Physics' == programme_name:
+        no_of_programme_years = 5
+        expected_honours_years = 3
+    else:
+        warning_message = 'Do not recognise student programme for parsing: ' + programme_name
+        return warning_message
     
-    if 'EXA120' in student_data_base['Module code']:
+    if 'EXA120' in student_data_base['Module code'].values:
         no_of_programme_years -=1
         
     no_subhonours_years = no_of_programme_years - expected_honours_years
@@ -723,8 +876,8 @@ def parse_excel_form(filename):
     for previous_honours_year in range(1,current_honours_year):
         year_difference = current_honours_year - previous_honours_year  
         year_number = 23-year_difference
-        calendar_year_string = '20' + str(calendar_year) + '/' + str(calendar_year + 1)
-        data_base_of_passed_modules_this_year = data_base_of_passed_modules[data_base_of_passed_modules['year']==calendar_year_string]
+        calendar_year_string = '20' + str(year_number) + '/20' + str(year_number + 1)
+        data_base_of_passed_modules_this_year = data_base_of_passed_modules[data_base_of_passed_modules['Year']==calendar_year_string]
         passed_modules_this_hear = data_base_of_passed_modules_this_year['Module code'].to_list()
         passed_honours_modules += passed_modules_this_hear
     
@@ -744,6 +897,8 @@ def parse_excel_form(filename):
     honours_module_choices = pd.DataFrame(module_table, columns = ['Honours year', 'Academic year', 'Semester', 'Module code'])
     
     this_student = Student(student_id, 
+                           full_name,
+                           email,
                            programme_name, 
                            year_of_study,
                            expected_honours_years,
@@ -758,6 +913,8 @@ def parse_excel_form(filename):
 class Student():
     def __init__(self, 
                  student_id, 
+                 full_name,
+                 email,
                  programme_name,
                  year_of_study,
                  expected_honours_years,
@@ -801,6 +958,8 @@ class Student():
         """
         
         self.student_id = student_id
+        self.full_name = full_name
+        self.email = email
         self.programme_name = programme_name
         self.year_of_study = year_of_study
         self.expected_honours_years = expected_honours_years
@@ -870,114 +1029,105 @@ def get_modules_under_header(sheet, header):
     module_code_is_not_empty = sheet[next_cell_name_with_module].value is not None
 
     while module_code_is_not_empty:
-        modules.append(sheet[next_cell_name_with_module].value)
+        module_code_entry = sheet[next_cell_name_with_module].value
+        if isinstance(module_code_entry, int):
+            module_code = str(module_code_entry)
+            module_code = 'MT' + module_code
+        else:
+            module_code = module_code_entry
+        module_code = module_code.strip()
+        modules.append(module_code)
         row_number+=1 
         next_cell_name_with_module = 'B' + str(row_number)
         module_code_is_not_empty = sheet[next_cell_name_with_module].value is not None
 
     return modules
 
-# def check_programme_requirements(Student)
-#     """This checks if a student passes their programme requirements.
-#     
-#     Parameters:
-#     -----------
-#     
-#     student : instance of Student class
-#         The student we are investigating
-#     """
-#     # Look up math requirements as a list of conditions
-#     # loop through the list of conditions
-#     # check if conditions are fulfilled
-#     
-# def check_prerequisites(student):
-#     """This checks if a student meets the prerequisits for their courses
-#     
-#     Parameters:
-#     -----------
-#     
-#     student : instance of Student class
-#         The student we are investigating
-#     """
-#     for module in get_all_student_modules(student):
-#         check_specific_module_requirements(student, module)
-# 
-# def check_specific_module_requirements(module, student):
-#     """This checks if a student meets the prerequisits for their courses
-#     
-#     Parameters:
-#     -----------
-#     
-#     module : string
-#         module code we are investigating
-# 
-#     student : instance of Student class
-#         The student we are investigating
-#     """
-#     these_module_requirements = get_requirements_for_module(module_code)
-#     previous_modules = get_previous_modules(student, module)
-#     concurrent_modules = get_concurrent_modules(student, module)
-#     for requirement in these_module_requirements:
-#         if not requirement.is_fulfilled(student, previous_modules, concurrent_modules)
-#             print('missing requirement ' + requirement.blurb())
-#             
-# def check_for_timetable_clashes(student):
-#     """This checks if a student will have any timetable clashes within maths
-#     
-#     Parameters:
-#     -----------
-#     
-#     student : instance of Student class
-#         The student we are investigating
-#     """
-#     for year in student.get_honours_years():
-#         for semester in [1,2]:
-#             these_modules = student.get_modules(year, semester)
-#             check_for_timetable_clashes(these_modules)
-
 def colour_code_passes(column):
+    """Helper function for saving the summary data frame, will colour code the column entries in a 
+    pandas array in green or red depending on whether they contain the entry 'None' or not
+    
+    Parameters:
+    -----------
+
+    column: pandas data array column
+       the column we are colour coding
+    
+    Returns:
+    --------
+
+    color_list : list of strings
+       a list of color setting for each of the cells in the array
+    """
     passed_colour = 'background-color: palegreen;'
     failed_colour = 'background-color: lightcoral;'
     return [passed_colour if value=='None' else failed_colour for value in column]
 
 def colour_recommendations(column):
+    """Helper function for saving the summary data frame, will colour code the column entries in a 
+    pandas array in no color or orange depending on whether they contain the entry 'None' or not
+    
+    Parameters:
+    -----------
+
+    column: pandas data array column
+       the column we are colour coding
+    
+    Returns:
+    --------
+
+    color_list : list of strings
+       a list of color setting for each of the cells in the array
+    """
     recommendation_colour = 'background-color: orange;'
     default_colour = ''
     return [default_colour if value=='None' else recommendation_colour for value in column]
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-                    prog='AdvisingScript',
-                    description='This script helps with advising',
-                    epilog='All results are experimental and not to be trusted. Double-check me. \n\n')
+def save_summary_data_frame(data_frame, filename):
+    """Save the summary data frame two an excel file, inlcuding a colour code formatting 
+    for the column.
     
-    parser.add_argument('filename')       
-    args = parser.parse_args()
-    form_filename = args.filename
-    summary_data_frame = check_form_file(form_filename)
-    summary_data_frame = (summary_data_frame.style.apply(colour_code_passes, subset = ['Unmet programme requirements', 'Missing prerequisites', 'Modules not running',
+    Parameters :
+    ------------
+
+    data_frame : Pandas data frame,
+        typically generated from the 'check_form_file' function
+    
+    filename : string
+        where we want to save
+    """
+
+    if not filename.endswith('.xlsx'):
+        filename += '.xlsx'
+        
+    data_frame = (data_frame.style.apply(colour_code_passes, subset = ['Unmet programme requirements', 'Missing prerequisites', 'Modules not running',
                                                                                        'Timetable clashes'], axis = 0).
                           apply(colour_recommendations, subset = ['Adviser recommendations'], axis = 0))
 
-    saving_name = 'summary_file.xlsx'
-    writer = pd.ExcelWriter(saving_name) 
-    # Manually adjust the width of the last column
-    summary_data_frame.to_excel(writer)
+    writer = pd.ExcelWriter(filename) 
+    # Manually adjust the width of each column
+    data_frame.to_excel(writer)
     worksheet = writer.sheets['Sheet1']
     font = openpyxl.styles.Font(size=14)
     worksheet.set_column(0,0,width=5)
-    worksheet.set_column(1,1,width=20)
-    worksheet.set_column(2,2,width=40)
-    worksheet.set_column(3,3,width=40)
-    worksheet.set_column(4,4,width=40)
+    worksheet.set_column(1,1,width=12)
+    worksheet.set_column(2,2,width=22)
+    worksheet.set_column(3,3,width=35)
+    worksheet.set_column(4,4,width=8)
     worksheet.set_column(5,5,width=40)
     worksheet.set_column(6,6,width=40)
+    worksheet.set_column(7,7,width=40)
+    worksheet.set_column(8,8,width=40)
+    worksheet.set_column(9,9,width=40)
+    
+    # The only way I found to change the font size is to save the excel file, reload it, and then edit the fontsize, and save it again
     writer.save()
     
-    new_workbook = openpyxl.load_workbook(saving_name)
+    # reload
+    reloaded_workbook = openpyxl.load_workbook(filename)
 
     # Access the active sheet
-    worksheet = new_workbook.active
+    worksheet = reloaded_workbook.active
 
     # Set the font size for all cells in the worksheet
     font_size = 14
@@ -991,4 +1141,65 @@ if __name__ == "__main__":
     for cell in worksheet[1]:
         cell.font = bold_font
     # Save the modified workbook
-    new_workbook.save(saving_name)
+    reloaded_workbook.save(filename)
+    
+def process_folder(folder_name):
+    """Finds all student formfiles (all excel files) in a folder and performs advising checks on them
+    
+    Parameters:
+    -----------
+    
+    folder_name : string
+        The path to the folder with the files
+        
+    Returns:
+    --------
+    
+    summary_data_frame : pandas data frame
+        Data frame with one column per student. Contains the same columns as the data frame returned
+        by process_form_file()
+    """
+    
+    folder_entries = os.listdir(folder_name)
+    
+    form_files = []
+    for entry in folder_entries:
+        if (os.path.isfile(os.path.join(folder_name,entry)) and 
+            (entry.endswith('.xlsx') or entry.endswith('.xltx')) and
+             not entry.startswith('~$')): # this last bit is for when excel has the file open
+            form_files.append(entry)
+            
+    if len(form_files) == 0:
+        raise(ValueError('there are no forms in the folder you have given me'))
+    else:
+        list_of_data_frames = []
+        for filename in form_files:
+            this_data_frame = process_form_file(os.path.join(folder_name, filename))
+            list_of_data_frames.append(this_data_frame)
+            separation_string = '-'*60
+            print(' ')
+            print(separation_string)
+            print(' ')
+        summary_data_frame = pd.concat(list_of_data_frames, ignore_index=True)
+        return summary_data_frame
+    
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+                    prog='AdvisingScript',
+                    description='This script helps with advising',
+                    epilog='All results are experimental and not to be trusted. Double-check me. \n\n')
+    
+    parser.add_argument('file_or_folder', type = str, help = 'name of the file or folder to be processed')       
+    args = parser.parse_args()
+
+    file_or_folder = args.file_or_folder
+    
+    if os.path.isdir(file_or_folder):
+        summary_data_frame = process_folder(file_or_folder)
+    elif os.path.isfile(file_or_folder):
+        summary_data_frame = process_form_file(file_or_folder)
+    else:
+        raise(ValueError('argument is neither a file or a folder. Does it exist?'))
+
+    saving_name = 'summary_file.xlsx'
+    save_summary_data_frame(summary_data_frame, saving_name)
