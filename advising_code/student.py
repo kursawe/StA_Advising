@@ -8,6 +8,7 @@ class Student():
                  expected_honours_years,
                  current_honours_year,
                  passed_modules,
+                 passed_module_table,
                  passed_honours_modules,
                  honours_module_choices):
         """Constructor for the Student class.
@@ -36,6 +37,9 @@ class Student():
             
         passed_modules : list of strings
             A list containing the module codes of all passed modules
+        
+        passed_moudle_table : pandas data frame
+            a pandas data frame that has the same column names as honours_module_choices
             
         passed_honours_modules : list of strings
             A list of all honours modules that the student has already taken and passed
@@ -53,6 +57,7 @@ class Student():
         self.expected_honours_years = expected_honours_years
         self.current_honours_year = current_honours_year
         self.passed_modules = passed_modules
+        self.passed_module_table = passed_module_table
         self.passed_honours_modules = passed_honours_modules
         self.honours_module_choices = honours_module_choices
 

@@ -215,16 +215,32 @@ def parse_excel_form(filename):
     
     for remaining_honours_year in range(current_honours_year,expected_honours_years + 1):
         year_key = 'Year ' + str(remaining_honours_year)
-        calendar_year = 22 + remaining_honours_year
+        calendar_year = 23 + remaining_honours_year - current_honours_year
         calendar_year_string = '20' + str(calendar_year) + '/20' + str(calendar_year + 1)
         for semester_number in [1,2]:
             semester_modules = get_modules_under_header(sheet, year_key + ' of Honours: Semester ' + str(semester_number)) 
             for module in semester_modules:
                 module_table.append([year_key, calendar_year_string, 'S' + str(semester_number), module,])
 
+    # make a table for modules that have been passed
+    passed_module_table = []
+    
+    for passed_module in passed_modules:
+        module_data_row = student_data_base[student_data_base['Module code'] == passed_module]
+        academic_year = module_data_row['Year'].values[0]
+        semester = module_data_row['Semester'].values[0]
+        this_year = int(academic_year[2:4])
+        this_honours_year =  this_year - 23 + current_honours_year
+        this_honours_year_string = 'Year ' + str(this_honours_year)
+        passed_module_table.append([this_honours_year_string, 
+                                    academic_year, semester, passed_module,])
+
     # Turn this all into a nice pandas data frame
     honours_module_choices = pd.DataFrame(module_table, columns = ['Honours year', 'Academic year', 'Semester', 'Module code'])
     
+    passed_module_table = pd.DataFrame(passed_module_table, 
+                                       columns = ['Honours year', 'Academic year', 'Semester', 'Module code'])
+
     this_student = Student(student_id, 
                            full_name,
                            email,
@@ -233,6 +249,7 @@ def parse_excel_form(filename):
                            expected_honours_years,
                            current_honours_year,
                            passed_modules,
+                           passed_module_table,
                            passed_honours_modules,
                            honours_module_choices)
     

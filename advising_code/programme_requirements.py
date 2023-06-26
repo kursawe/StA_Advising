@@ -1,5 +1,6 @@
 import collections
 from .infrastructure import *
+import pandas as pd
 
 def find_missing_programme_requirements(student):
     """check that the student fulfils their honours requirements
@@ -166,53 +167,108 @@ def find_missing_programme_requirements(student):
                                                                                         and 'MT5' not in module]
         if len(list_of_planned_non_maths_modules) >0:
             list_of_adviser_recommendations.append('Student is planning to take non-MT modules, which requires permission')
- 
-    ### MA MATHEMATICS AND PHILOSOPHY REQUIREMENTS ###
-    elif student.programme_name == 'Master of Arts (Honours) Mathematics and Philosophy':
-        # check there are four modules in MT3501 to MT3508
-        list_of_MT350X_modules = ['MT3501', 'MT3502', 'MT3503', 'MT3504']
-        number_of_MT350X_modules = student.get_number_of_modules_in_list(list_of_MT350X_modules)
+    ### MASTER IN CHEMISTRY WITH MATHEMATICS REQUIREMENTS ###
+    elif student.programme_name == 'Master in Chemistry (Honours) Chemistry with Mathematics':
+        # This next code is different from other requirements because the conditions on year 4 and 5 are different for this particular
+        # programme
+        full_module_table = pd.concat([student.passed_module_table, student.honours_module_choices], ignore_index=True)
+        reduced_module_table = full_module_table[(full_module_table['Honours year'] == 'Year 1') | (full_module_table['Honours year']=='Year 2')]
+        year_three_and_four_modules = reduced_module_table['Module code'].to_list()
+        
+        second_reduced_module_table = full_module_table[full_module_table['Honours year'] == 'Year 3']
+        year_five_modules = second_reduced_module_table['Module code'].to_list()
+
+        # check there are three modules in MT3501 to MT3508
+        list_of_MT350X_modules = ['MT3501', 'MT3502', 'MT3503', 'MT3504', 'MT3505', 'MT3506', 'MT3507', 'MT3508']
+        number_of_MT350X_modules = len(set.intersection(set(year_three_and_four_modules),set(list_of_MT350X_modules)))
         if number_of_MT350X_modules < 3:
-            list_of_missed_requirements.append('Student is only taking ' + str(number_of_MT350X_modules) + ' modules out of MT3501-MT3504 (instead of 3)')
+            list_of_missed_requirements.append('Student is only taking ' + str(number_of_MT350X_modules) + ' modules out of MT3501-MT3508 in years 3 and 4 (instead of 3)')
             
+        # check there are 90 credits (6 modules) in MT modules for year 3 and 4
+        list_of_all_MT_modules = [module for module in year_three_and_four_modules if 'MT3' in module 
+                                                                                   or 'MT4' in module]
+
+        if len(list_of_all_MT_modules) < 6:
+            list_of_missed_requirements.append('Student is not taking 90 credits in MT modules in year 3 and 4')
+
+        # check year 5 modules have maximally 30 credits in MT5600-MT5899:
+        number_of_counting_year_5_modules = 0
+        number_of_unallowed_modules = 0
+        for module in year_five_modules:
+            if module.startswith('MT'):
+                module_number = int(module[2:])
+                if module_number > 5600 and module_number< 5899:
+                    number_of_counting_year_5_modules += 1
+                else:
+                    number_of_unallowed_modules += 1
+        
+        if number_of_counting_year_5_modules>2:
+            list_of_missed_requirements.append('Student is taking taking more than 2 MT modules in year 5 (which is not allowed)')
+        
+        if number_of_unallowed_modules > 0:
+            list_of_missed_requirements.append('Student is taking a MT module in year 5 which they are not allowed to take (i.e. outside of MT5600-MT5899)')
+            
+        # Students are not allowed to take MT4599
+        if 'MT4599' in student.all_honours_modules:
+            list_of_missed_requirements.append('Student is taking taking MT4599 (which is not allowed)')
+                
+        list_of_adviser_recommendations.append('This is a joint honours programme and the adviser needs to manually check that the student \
+takes a total of 120 credits per year')
+
+    ### BSC MATH AND PHYSICS REQUIREMENTS
+    elif student.programme_name == 'Bachelor of Science (Honours) Mathematics and Physics':
+        # This next code is different from other requirements because the conditions on year 3 are different for this particular
+        # programme
+        full_module_table = pd.concat([student.passed_module_table, student.honours_module_choices], ignore_index=True)
+        reduced_module_table = full_module_table[(full_module_table['Honours year'] == 'Year 1')]
+        year_three_modules = reduced_module_table['Module code'].to_list()
+        
+        second_reduced_module_table = full_module_table[full_module_table['Honours year'] == 'Year 0']
+        relevant_subhonours_modules = second_reduced_module_table['Module code'].to_list()
+        
+        if 'MT2507' in relevant_subhonours_modules and 'MT2506' in relevant_subhonours_modules:
+            if 'MT3504' not in year_three_modules:
+                list_of_missed_requirements.append('Student is not taking MT3504 in year 3 (which is required for them)')
+        elif 'MT2502' in relevant_subhonours_modules and 'MT2505' in relevant_subhonours_modules:
+            if 'MT3502' not in year_three_modules or 'MT3505' not in year_three_modules:
+                list_of_missed_requirements.append('Student is not taking MT3505 and MT3502 in year 3 (which is a requirement for them)')
+        else:
+            list_of_missed_requirements.append('Student does not seem to have an allowed selection of subhonours MT modules')
+                
+        # check that there are at least 90 credits of MT modules across both honours years
+        list_of_all_MT_modules = [module for module in student.all_honours_modules if 'MT3' in module 
+                                                                                   or 'MT4' in module]
+        if len(list_of_all_MT_modules) < 6:
+            list_of_missed_requirements.append('Student planning less then 90 credits (6 modules) in MT modules')
+
         # check there is a final year project
-        list_of_project_codes = ['MT4599']
+        list_of_project_codes = ['MT4596', 'MT4599', 'PH4111']
         number_final_year_projects= student.get_number_of_modules_in_list(list_of_project_codes)
         if number_final_year_projects !=1:
             list_of_missed_requirements.append('Student is not taking an allowed final year project')
         else:
             # check that the student is actually taking it in year 4
-            this_year = student.honours_module_choices[student.honours_module_choices['Module code'] == 'MT4599']['Honours year'].iloc[0]
+            if 'MT4596' in student.full_module_list:
+                this_year = student.honours_module_choices[student.honours_module_choices['Module code'] == 'MT4596']['Honours year'].iloc[0]
+            elif 'MT4599' in student.full_module_list:
+                this_year = student.honours_module_choices[student.honours_module_choices['Module code'] == 'MT4599']['Honours year'].iloc[0]
+            else:
+                this_year = student.honours_module_choices[student.honours_module_choices['Module code'] == 'PH4111']['Honours year'].iloc[0]
             if this_year != 'Year 2':
                 list_of_missed_requirements.append('Student is not taking their final year project in their final year.')
-        
-        # check that the student is taking at least 120 credits (8 modules) in MT modules (60 modules any code + 15 modules final year project + 45 credits of MT3501-MT3508)
-        # while also checking that there are not too many dip-down ID/VP modules
-        list_of_all_MT_modules = [module for module in student.all_honours_modules if 'MT3' in module 
-                                                                                      or 'MT4' in module]
-
-        list_of_all_allowed_modules = [module for module in student.all_honours_modules if 'MT2' in module 
-                                                                                        or 'MT3' in module 
-                                                                                        or 'MT4' in module
-                                                                                        or 'ID4001' in module
-                                                                                        or 'VP' in module]
-
-        if len(list_of_all_allowed_modules) <8 or len(list_of_all_MT_modules) < 7:
-            if len(list_of_all_MT_modules) < 7 and len(list_of_all_allowed_modules) > 7:
-                list_of_missed_requirements.append('Student is taking too many modules as dip-down or in ID/VP moduels (which is not allowed)')
-            else:
-                list_of_missed_requirements.append('Student is not taking enough credits (less than 8 modules) among MT modules')
-
-        # check planned dip-down
-        list_of_planned_2000_level_modules = [module for module in student.planned_honours_modules if 'MT2' in module
-                                                                                                    or 'ID4001' in module
-                                                                                                    or 'VP' in module]
-        if len(list_of_planned_2000_level_modules) >0:
-            list_of_adviser_recommendations.append('Student is planning to take 2000 level modules or ID4001 or VP modules (which all require permission)')
-
+ 
         list_of_adviser_recommendations.append('This is a joint honours programme and the adviser needs to manually check that the student \
-takes a total of 120 credits per year and that they take at least 90 credits at 4000 level')
-
+takes a total of 120 credits per year and that the student takes at least 90 credits at 4000 level')
+ 
+    ### JOINT HONOURS REQUIREMENTS ###
+    elif student.programme_name in ['Master of Arts (Honours) Mathematics and Philosophy',
+                                    'Bachelor of Science (Honours) Chemistry and Mathematics',
+                                    'Bachelor of Science (Honours) Mathematics and Psychology (BPS Recognition Route)']:
+        
+        missed_requirement, adviser_recommendation = check_joint_honours_requirements(student)
+        list_of_missed_requirements.append(missed_requirement)
+        list_of_adviser_recommendations.append(adviser_recommendation)
+        
     else:
         list_of_missed_requirements.append('No programme requirements available')
 
@@ -222,6 +278,81 @@ takes a total of 120 credits per year and that they take at least 90 credits at 
 
     return missed_requirements, adviser_recommendations
     
+def check_joint_honours_requirements(student):
+    """Check whether a student meets the requirements for a joint honours programme, 
+    such as the Bachelor of Science (Honours) Chemistry and Mathematics or the
+    Master of Arts (Honours) Mathematics and Philosophy. These requirements can be used as a
+    reference for these conditions.
+
+    Parameters :
+    ------------
+
+    student : instance of Student() class
+        the student for which we are checking the requirements.
+
+    Returns :
+    ---------
+
+    missed_requirements : string
+        Unmet programme requirements. Will return 'None' if all programme requirements are met
+        
+    adviser_recommendations : string
+        advising recommendations that don't strictly count as unmet programme requirements. Here,
+        this includes conditions that the adviser needs to check manually
+    """
+    list_of_missed_requirements = []
+    list_of_adviser_recommendations = []
+
+    # check there are three modules in MT3501 to MT3508
+    list_of_MT350X_modules = ['MT3501', 'MT3502', 'MT3503', 'MT3504', 'MT3505', 'MT3506', 'MT3507', 'MT3508']
+    number_of_MT350X_modules = student.get_number_of_modules_in_list(list_of_MT350X_modules)
+    if number_of_MT350X_modules < 3:
+        list_of_missed_requirements.append('Student is only taking ' + str(number_of_MT350X_modules) + ' modules out of MT3501-MT3504 (instead of 3)')
+        
+    # check there is a final year project
+    list_of_project_codes = ['MT4599']
+    number_final_year_projects= student.get_number_of_modules_in_list(list_of_project_codes)
+    if number_final_year_projects !=1:
+        list_of_missed_requirements.append('Student is not taking an allowed final year project')
+    else:
+        # check that the student is actually taking it in year 4
+        this_year = student.honours_module_choices[student.honours_module_choices['Module code'] == 'MT4599']['Honours year'].iloc[0]
+        if this_year != 'Year 2':
+            list_of_missed_requirements.append('Student is not taking their final year project in their final year.')
+    
+    # check that the student is taking at least 120 credits (8 modules) in MT modules (60 modules any code + 15 modules final year project + 45 credits of MT3501-MT3508)
+    # while also checking that there are not too many dip-down ID/VP modules
+    list_of_all_MT_modules = [module for module in student.all_honours_modules if 'MT3' in module 
+                                                                                  or 'MT4' in module]
+
+    list_of_all_allowed_modules = [module for module in student.all_honours_modules if 'MT2' in module 
+                                                                                    or 'MT3' in module 
+                                                                                    or 'MT4' in module
+                                                                                    or 'ID4001' in module
+                                                                                    or 'VP' in module]
+
+    if len(list_of_all_allowed_modules) <8 or len(list_of_all_MT_modules) < 7:
+        if len(list_of_all_MT_modules) < 7 and len(list_of_all_allowed_modules) > 7:
+            list_of_missed_requirements.append('Student is taking too many modules as dip-down or in ID/VP moduels (which is not allowed)')
+        else:
+            list_of_missed_requirements.append('Student is not taking enough credits (less than 8 modules) among MT modules')
+
+    # check planned dip-down
+    list_of_planned_2000_level_modules = [module for module in student.planned_honours_modules if 'MT2' in module
+                                                                                                or 'ID4001' in module
+                                                                                                or 'VP' in module]
+    if len(list_of_planned_2000_level_modules) >0:
+        list_of_adviser_recommendations.append('Student is planning to take 2000 level modules or ID4001 or VP modules (which all require permission)')
+
+    list_of_adviser_recommendations.append('This is a joint honours programme and the adviser needs to manually check that the student \
+takes a total of 120 credits per year and that they take at least 90 credits at 4000 level')
+
+
+    missed_requirements = merge_list_to_long_string(list_of_missed_requirements)
+    adviser_recommendations = merge_list_to_long_string(list_of_adviser_recommendations)
+    
+    return missed_requirements, adviser_recommendations
+
 def check_for_120_credits_each_year(student):
     """check whether the student is actually taking 120 credits each acacemic year, and whether they 
        have an even split of modules.
