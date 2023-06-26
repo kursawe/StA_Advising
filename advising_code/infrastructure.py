@@ -31,7 +31,7 @@ def process_form_file(filename):
         elif student_or_warning.startswith('Do not recognise student programme for parsing:'):
             warning_message = 'Could not process ' + filename_for_output + '. ' + student_or_warning
         colour_code_print_statement(warning_message)
-        summary_data =[000000000, 
+        summary_data =[999999999, 
                     'Unknown',
                     'Unknown',
                     0,
