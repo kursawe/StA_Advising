@@ -22,13 +22,14 @@ def process_form_file(filename):
         i.e. a filled-in module choice form
     """ 
     student_or_warning = parse_excel_form(filename)
+    _,filename_for_output = os.path.split(filename)
     if isinstance(student_or_warning, str):
         if student_or_warning == 'No student ID':
-            warning_message = 'Could not process ' + filename + '. The file does not contain a valid student ID.'
+            warning_message = 'Could not process ' + filename_for_output + '. The file does not contain a valid student ID.'
         elif student_or_warning.startswith('contains invalid student ID'):
-            warning_message = 'Could not process ' + filename + '. The file ' + student_or_warning
+            warning_message = 'Could not process ' + filename_for_output + '. The file ' + student_or_warning
         elif student_or_warning.startswith('Do not recognise student programme for parsing:'):
-            warning_message = 'Could not process ' + filename + '. ' + student_or_warning
+            warning_message = 'Could not process ' + filename_for_output + '. ' + student_or_warning
         colour_code_print_statement(warning_message)
         summary_data =[000000000, 
                     'Unknown',
@@ -82,8 +83,6 @@ def process_form_file(filename):
 
     summary_data_frame = generate_summary_data_frame_from_entries(summary_data)
     
-    summary_data_frame.sort_values(by='Student ID')
-
     return summary_data_frame
 
 def parse_excel_form(filename):
@@ -574,6 +573,9 @@ def process_folder(folder_name):
             print(separation_string)
             print(' ')
         summary_data_frame = pd.concat(list_of_data_frames, ignore_index=True)
+
+        summary_data_frame = summary_data_frame.sort_values(by='Student ID')
+
         return summary_data_frame
  
 from .programme_requirements import *
