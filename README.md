@@ -35,6 +35,7 @@ pip install openpyxl
 pip install pandas
 pip install termcolor
 pip install python-docx
+pip install jinja2
 ```
 
 ## Getting the code
