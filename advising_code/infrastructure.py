@@ -457,7 +457,7 @@ def save_summary_data_frame(data_frame, filename):
     worksheet.set_column(9,9,width=40)
     
     # The only way I found to change the font size is to save the excel file, reload it, and then edit the fontsize, and save it again
-    writer.save()
+    writer.close()
     
     # reload
     reloaded_workbook = openpyxl.load_workbook(filename)

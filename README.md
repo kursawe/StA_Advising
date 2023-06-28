@@ -36,6 +36,7 @@ pip install pandas
 pip install termcolor
 pip install python-docx
 pip install jinja2
+pip install xlsxwriter
 ```
 
 ## Getting the code
