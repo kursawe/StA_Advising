@@ -488,48 +488,61 @@ def save_summary_data_frame(data_frame, filename):
     for _,row in data_frame.iterrows():
         paragraph = word_document.add_paragraph()
         run = paragraph.add_run('Student ID: ' + str(row['Student ID']))
+        run.font.name='Arial'
         run.add_break()
         run = paragraph.add_run('Name: ' + row['Name'])
+        run.font.name='Arial'
         run.add_break()
         run = paragraph.add_run('Programme: ' + row['Programme'])
+        run.font.name='Arial'
         run.add_break()
         run = paragraph.add_run('The student is missing the following programme requirements:')
+        run.font.name='Arial'
         run.add_break()
         run = paragraph.add_run(row['Unmet programme requirements'])
         if row['Unmet programme requirements']!= 'None':
             run.font.color.rgb = docx.shared.RGBColor(255,0,0)
         else:
             run.font.color.rgb = docx.shared.RGBColor(0,128,0)
+        run.font.name='Arial'
         run.add_break()
         run = paragraph.add_run('The student is missing the following prerequisites:')
+        run.font.name='Arial'
         run.add_break()
         run = paragraph.add_run(row['Missing prerequisites'])
         if row['Missing prerequisites']!= 'None':
             run.font.color.rgb = docx.shared.RGBColor(255,0,0)
         else:
             run.font.color.rgb = docx.shared.RGBColor(0,128,0)
+        run.font.name='Arial'
         run.add_break()
         run = paragraph.add_run('The student selected the following modules when they are not running:')
+        run.font.name='Arial'
         run.add_break()
         run = paragraph.add_run(row['Modules not running'])
         if row['Modules not running']!= 'None':
             run.font.color.rgb = docx.shared.RGBColor(255,0,0)
         else:
             run.font.color.rgb = docx.shared.RGBColor(0,128,0)
+        run.font.name='Arial'
         run.add_break()
         run = paragraph.add_run('I found the following timetable clashes:')
+        run.font.name='Arial'
         run.add_break()
         run = paragraph.add_run(row['Timetable clashes'])
         if row['Timetable clashes']!= 'None':
             run.font.color.rgb = docx.shared.RGBColor(255,0,0)
         else:
             run.font.color.rgb = docx.shared.RGBColor(0,128,0)
+        run.font.name='Arial'
         run.add_break()
         run = paragraph.add_run('I have the following comments for the adviser')
+        run.font.name='Arial'
         run.add_break()
         run = paragraph.add_run(row['Adviser recommendations'])
         if row['Adviser recommendations']!= 'None':
             run.font.color.rgb = docx.shared.RGBColor(255,102,0)
+        run.font.name='Arial'
         run.add_break()
         run.add_break()
         
