@@ -32,6 +32,10 @@ def find_timetable_clashes(student):
             timeslot_dictionary = dict()
             for module in semester_modules:
                 these_timeslots = get_timeslots_for_module(module)
+                if module == 'MT4005':
+                    this_academic_year = student.honours_module_choices[student.honours_module_choices['Module code'] == module]['Academic year'].values[0]
+                    if this_academic_year in ['2024/2025', '2026/2027','2028/2029']:
+                        these_timeslots = ['9am Mon (odd weeks)', '9am Wed', '9am Fri']
                 timeslot_dictionary[module] = these_timeslots
             
             timetable_clashes_list += find_clashing_timeslots_and_modules(timeslot_dictionary, honours_year, semester)
@@ -199,6 +203,10 @@ def find_not_running_modules(student):
     # make a list of not running modules
     not_running_modules_list = []
     adviser_recommendations_list = []
+    
+    for module in student.planned_honours_modules:
+        if module.startswith('MT') and module not in module_catalogue['Module code'].values:
+            not_running_modules_list.append('Student is planning to take ' + module + ' (which does not exist)')
 
     for _, row in student.honours_module_choices.iterrows():
         # get the module data
@@ -211,6 +219,8 @@ def find_not_running_modules(student):
             continue
         module_catalogue_entry = module_catalogue[module_catalogue['Module code'] == planned_module_code]
         module_semester = module_catalogue_entry['Semester'].values[0]
+        if planned_module_code == 'MT4005' and planned_academic_year in ['2024/2025', '2026/2027','2028/2029']:
+            module_semester = 'S2'
         # tell if the student picked the wrong semester
         if planned_semester != module_semester and module_semester != 'Full Year':
             not_running_modules_list.append('Selected module ' + planned_module_code + ' for Semester ' +
@@ -233,6 +243,8 @@ def find_not_running_modules(student):
             else:
                 new_academic_year = str(start_year + repeat_index) + '/' + str(start_year + repeat_index + 1)
             list_of_running_academic_years.append(new_academic_year)
+        if planned_module_code == 'MT4005':
+            list_of_running_academic_years = ['2023/2024', '2024/2025', '2026/2027','2028/2029']
         if planned_academic_year not in list_of_running_academic_years:
             not_running_modules_list.append('Selected module ' + planned_module_code + ' is not running in academic year ' +
                                             str(planned_academic_year))

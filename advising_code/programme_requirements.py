@@ -35,10 +35,6 @@ def find_missing_programme_requirements(student):
                 warning_string += ', '
         list_of_missed_requirements.append(warning_string)
     
-    for module in student.planned_honours_modules:
-        if module.startswith('MT') and module not in module_catalogue['Module code'].values:
-            list_of_missed_requirements.append('Student is planning to take ' + module + ' (which does not exist)')
-
     ### BSC MATHEMATICS REQUIREMENTS
     if student.programme_name in ['Bachelor of Science (Honours) Mathematics',
                                   'Master of Arts (Honours) Mathematics']:
