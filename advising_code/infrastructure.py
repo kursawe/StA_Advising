@@ -150,7 +150,7 @@ def parse_excel_form(filename):
     year_of_study = year_of_study
     
     # identify all modules that the student has passed
-    data_base_of_passed_modules = student_data_base[student_data_base['Assessment result']=='P']
+    data_base_of_passed_modules = student_data_base[(student_data_base['Assessment result']=='P') | (student_data_base['Assessment result']=='Z') ]
     passed_modules = data_base_of_passed_modules['Module code'].to_list()
     passed_modules = passed_modules
     
@@ -361,18 +361,22 @@ def get_modules_under_header(sheet, header):
     next_cell_name_with_module = 'B' + str(row_number)
     module_code_is_not_empty = sheet[next_cell_name_with_module].value is not None
 
-    while module_code_is_not_empty:
-        module_code_entry = sheet[next_cell_name_with_module].value
-        if isinstance(module_code_entry, int):
-            module_code = str(module_code_entry)
-            module_code = 'MT' + module_code
-        else:
-            module_code = module_code_entry
-        module_code = module_code.strip()
-        modules.append(module_code)
+    row_index = 0
+    while row_index < 6:
+        this_cell_is_empty = sheet[next_cell_name_with_module].value is None
+        if not this_cell_is_empty:
+            module_code_entry = sheet[next_cell_name_with_module].value
+            if isinstance(module_code_entry, int):
+                module_code = str(module_code_entry)
+                module_code = 'MT' + module_code
+            else:
+                module_code = module_code_entry
+            module_code = module_code.strip()
+            modules.append(module_code)
         row_number+=1 
         next_cell_name_with_module = 'B' + str(row_number)
-        module_code_is_not_empty = sheet[next_cell_name_with_module].value is not None
+        # module_code_is_not_empty = sheet[next_cell_name_with_module].value is not None
+        row_index += 1
 
     return modules
 

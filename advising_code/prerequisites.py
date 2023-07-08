@@ -106,8 +106,7 @@ def get_missing_prerequisites_for_module(module, student):
             if required_module not in previously_taken_modules:
                 missed_prerequisites_list.append('Student is missing prerequisite ' + required_module + ' for module ' + module)
         # sometiems it's just a letter of agreement that we need to know about
-        elif len(prerequisite_list) == 3:
-            if prerequisites == 'Letter of agreement':
+        elif prerequisites == 'Letter of Agreement':
                 adviser_recommendations_list.append('Module ' + module + ' requires a letter of agreement')
         elif prerequisites == 'Students must have gained admission onto an MSc programme':
             missed_prerequisites_list.append('Student cannot take module ' + module + ' as this module is only available to Msc students')
@@ -177,6 +176,6 @@ def get_missing_prerequisites_for_module(module, student):
     # merge all missed prerequisites into a string
     missed_prerequisites = merge_list_to_long_string(missed_prerequisites_list)
     adviser_recommendations = merge_list_to_long_string(adviser_recommendations_list)
-
+    
     return missed_prerequisites, adviser_recommendations
 

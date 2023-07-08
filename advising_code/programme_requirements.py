@@ -161,7 +161,8 @@ def find_missing_programme_requirements(student):
         list_of_planned_non_maths_modules = [module for module in student.planned_honours_modules if 'MT2' not in module 
                                                                                         and 'MT3' not in module 
                                                                                         and 'MT4' not in module 
-                                                                                        and 'MT5' not in module]
+                                                                                        and 'MT5' not in module
+                                                                                        and 'ID5059' not in module]
         if len(list_of_planned_non_maths_modules) >0:
             list_of_adviser_recommendations.append('Student is planning to take non-MT modules, which requires permission')
             
@@ -227,7 +228,8 @@ def find_missing_programme_requirements(student):
         list_of_planned_non_maths_modules = [module for module in student.planned_honours_modules if 'MT2' not in module 
                                                                                         and 'MT3' not in module 
                                                                                         and 'MT4' not in module 
-                                                                                        and 'MT5' not in module]
+                                                                                        and 'MT5' not in module
+                                                                                        and 'ID5059' not in module]
         if len(list_of_planned_non_maths_modules) >0:
             list_of_adviser_recommendations.append('Student is planning to take non-MT modules, which requires permission')
 
@@ -288,7 +290,8 @@ def find_missing_programme_requirements(student):
         list_of_planned_non_maths_modules = [module for module in student.planned_honours_modules if 'MT2' not in module 
                                                                                         and 'MT3' not in module 
                                                                                         and 'MT4' not in module 
-                                                                                        and 'MT5' not in module]
+                                                                                        and 'MT5' not in module
+                                                                                        and 'ID5059' not in module]
         if len(list_of_planned_non_maths_modules) >0:
             list_of_adviser_recommendations.append('Student is planning to take non-MT modules, which requires permission')
 
@@ -362,7 +365,8 @@ def find_missing_programme_requirements(student):
         list_of_planned_non_maths_modules = [module for module in student.planned_honours_modules if 'MT2' not in module 
                                                                                         and 'MT3' not in module 
                                                                                         and 'MT4' not in module 
-                                                                                        and 'MT5' not in module]
+                                                                                        and 'MT5' not in module
+                                                                                        and 'ID5059' not in module]
         if len(list_of_planned_non_maths_modules) >0:
             list_of_adviser_recommendations.append('Student is planning to take non-MT modules, which requires permission')
  
@@ -433,7 +437,7 @@ takes a total of 120 credits per year')
             if 'MT3502' not in year_three_modules or 'MT3505' not in year_three_modules:
                 list_of_missed_requirements.append('Student is not taking MT3505 and MT3502 in year 3 (which is a requirement for them)')
         else:
-            list_of_missed_requirements.append('Student does not seem to have an allowed selection of subhonours MT modules')
+            list_of_missed_requirements.append('Student does not seem to have passed an allowed selection of subhonours MT modules [(MT2506 and MT2507) or (MT2502 and MT2505)]')
                 
         # check that there are at least 90 credits of MT modules across both honours years
         list_of_all_MT_modules = [module for module in student.all_honours_modules if 'MT3' in module 
@@ -724,6 +728,7 @@ def check_for_120_credits_each_year(student):
     
     #checking moduel splits
     for honours_year in honours_years:
+        this_data_base = student.honours_module_choices[student.honours_module_choices['Honours year'] == honours_year]
         if honours_year == 'Year 1' or (honours_year == 'Year 2' and student.expected_honours_years == 3):
             for semester in ['S1', 'S2']:
                 this_smaller_data_base = this_data_base[this_data_base['Semester'] == semester]
@@ -732,15 +737,15 @@ def check_for_120_credits_each_year(student):
         elif honours_year == 'Year 2':
             this_reduced_data_base = this_data_base[this_data_base['Module code'] != 'MT4599']
             semester_1_modules = this_reduced_data_base[this_reduced_data_base['Semester'] == 'S1']['Module code']
-            semester_2_modules = this_reduced_data_base[this_reduced_data_base['Semester'] == 'S1']['Module code']
+            semester_2_modules = this_reduced_data_base[this_reduced_data_base['Semester'] == 'S2']['Module code']
             if len(semester_1_modules) != 4 or len(semester_2_modules) != 3:
-                list_of_adviser_recommendations.append('Student is taking a high course load in second semester of final honours year')
+                list_of_adviser_recommendations.append('Student is taking a high course load in second semester of final honours year (which may make the final year project completion difficult)')
         elif honours_year == 'Year 3':
             this_reduced_data_base = this_data_base[this_data_base['Module code'] != 'MT5599']
             semester_1_modules = this_reduced_data_base[this_reduced_data_base['Semester'] == 'S1']['Module code']
-            semester_2_modules = this_reduced_data_base[this_reduced_data_base['Semester'] == 'S1']['Module code']
-            if len(semester_1_modules) != 3 or len(semester_2_modules) != 3:
-                list_of_adviser_recommendations.append('Student is taking uneven course load in final honours year')
+            semester_2_modules = this_reduced_data_base[this_reduced_data_base['Semester'] == 'S2']['Module code']
+            if not ((len(semester_1_modules) == 3 and len(semester_2_modules) == 3) or (len(semester_1_modules) == 4 and len(semester_2_modules) == 2)):
+                list_of_adviser_recommendations.append('Student is taking a high course load second semester of final honours year (which may make project completion difficult)')
     
     missed_requirement = merge_list_to_long_string(list_of_missed_requirements)
     adviser_recommendation = merge_list_to_long_string(list_of_adviser_recommendations)
