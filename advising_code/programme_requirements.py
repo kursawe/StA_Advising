@@ -122,7 +122,7 @@ def find_missing_programme_requirements(student):
                                                                                         and 'MT4' not in module 
                                                                                         and 'MT5' not in module]
         if len(list_of_planned_non_maths_modules) >0:
-            list_of_adviser_recommendations.append('Student is planning to take non-MT modules, which requires permission')
+            list_of_adviser_recommendations.append('Student is planning to take non-MT modules, which requires permission and may affect credit balance')
 
     ### MMATH REQUIREMENTS ###
     elif student.programme_name == 'Master in Mathematics (Honours) Mathematics':
@@ -183,7 +183,7 @@ def find_missing_programme_requirements(student):
                                                                                         and 'MT5' not in module
                                                                                         and 'ID5059' not in module]
         if len(list_of_planned_non_maths_modules) >0:
-            list_of_adviser_recommendations.append('Student is planning to take non-MT modules, which requires permission')
+            list_of_adviser_recommendations.append('Student is planning to take non-MT modules, which requires permission and may affect credit balance')
             
     ### MMATH APPLIED REQUIREMENTS ###
     elif student.programme_name == 'Master in Mathematics (Honours) Applied Mathematics':
@@ -250,7 +250,7 @@ def find_missing_programme_requirements(student):
                                                                                         and 'MT5' not in module
                                                                                         and 'ID5059' not in module]
         if len(list_of_planned_non_maths_modules) >0:
-            list_of_adviser_recommendations.append('Student is planning to take non-MT modules, which requires permission')
+            list_of_adviser_recommendations.append('Student is planning to take non-MT modules, which requires permission and may affect credit balance')
 
     ### MMATH PURE REQUIREMENTS ###
     elif student.programme_name == 'Master in Mathematics (Honours) Pure Mathematics':
@@ -312,7 +312,7 @@ def find_missing_programme_requirements(student):
                                                                                         and 'MT5' not in module
                                                                                         and 'ID5059' not in module]
         if len(list_of_planned_non_maths_modules) >0:
-            list_of_adviser_recommendations.append('Student is planning to take non-MT modules, which requires permission')
+            list_of_adviser_recommendations.append('Student is planning to take non-MT modules, which requires permission and may affect credit balance')
 
     ### MA STATISTICS REQUIREMENTS ###
     elif student.programme_name in ['Bachelor of Science (Honours) Statistics','Master of Arts (Honours) Statistics']:
@@ -387,7 +387,7 @@ def find_missing_programme_requirements(student):
                                                                                         and 'MT5' not in module
                                                                                         and 'ID5059' not in module]
         if len(list_of_planned_non_maths_modules) >0:
-            list_of_adviser_recommendations.append('Student is planning to take non-MT modules, which requires permission')
+            list_of_adviser_recommendations.append('Student is planning to take non-MT modules, which requires permission and may affect credit balance')
  
 
     ### MASTER IN CHEMISTRY WITH MATHEMATICS REQUIREMENTS ###
