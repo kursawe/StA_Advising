@@ -8,6 +8,8 @@ class Student():
                  expected_honours_years,
                  current_honours_year,
                  passed_modules,
+                 z_coded_modules,
+                 deferred_modules,
                  passed_module_table,
                  passed_honours_modules,
                  honours_module_choices):
@@ -57,6 +59,8 @@ class Student():
         self.expected_honours_years = expected_honours_years
         self.current_honours_year = current_honours_year
         self.passed_modules = passed_modules
+        self.z_coded_modules = z_coded_modules
+        self.deferred_modules = deferred_modules
         self.passed_module_table = passed_module_table
         self.passed_honours_modules = passed_honours_modules
         self.honours_module_choices = honours_module_choices

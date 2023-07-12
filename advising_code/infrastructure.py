@@ -150,10 +150,20 @@ def parse_excel_form(filename):
     year_of_study = year_of_study
     
     # identify all modules that the student has passed
-    data_base_of_passed_modules = student_data_base[(student_data_base['Assessment result']=='P') | (student_data_base['Assessment result']=='Z') ]
+    data_base_of_passed_modules = student_data_base[(student_data_base['Assessment result']=='P') | 
+                                                    (student_data_base['Reassessment result']=='P') |
+                                                    ((student_data_base['Assessment result']=='Z') & (pd.isnull(student_data_base['Reassessment result']))) |
+                                                    ((student_data_base['Assessment result']=='D') & (pd.isnull(student_data_base['Reassessment result'])))]
     passed_modules = data_base_of_passed_modules['Module code'].to_list()
     passed_modules = passed_modules
     
+    # remember all deferred and z coded modules
+    data_base_of_z_coded_modules = student_data_base[(student_data_base['Assessment result']=='Z') & (pd.isnull(student_data_base['Reassessment result']))]
+    z_coded_modules = data_base_of_z_coded_modules['Module code'].to_list()
+    
+    data_base_of_deferred_modules = student_data_base[(student_data_base['Assessment result']=='D') & (pd.isnull(student_data_base['Reassessment result']))]
+    deferred_modules = data_base_of_deferred_modules['Module code'].to_list()
+
     #identify the programme of the student
     programme_entries = student_data_base['Programme name'].unique()    
     assert(len(programme_entries) == 1)
@@ -248,6 +258,8 @@ def parse_excel_form(filename):
                            expected_honours_years,
                            current_honours_year,
                            passed_modules,
+                           z_coded_modules,
+                           deferred_modules,
                            passed_module_table,
                            passed_honours_modules,
                            honours_module_choices)
