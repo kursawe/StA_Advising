@@ -384,6 +384,7 @@ def get_modules_under_header(sheet, header):
             else:
                 module_code = module_code_entry
             module_code = module_code.strip()
+            module_code = module_code.replace('Mt','MT')
             modules.append(module_code)
         row_number+=1 
         next_cell_name_with_module = 'B' + str(row_number)
