@@ -2,6 +2,19 @@ import collections
 from .infrastructure import *
 import pandas as pd
 
+# a dictionary of possible joint projects
+joint_project_dictionary = {}
+joint_project_dictionary['Bachelor of Science (Honours) Computer Science and Mathematics'] = ['CS4796']
+joint_project_dictionary['Master of Arts (Honours) Mathematics and Philosophy'] = ['SA4796', 'SA4797']
+joint_project_dictionary['Bachelor of Science (Honours) Mathematics and Psychology (BPS Recognition Route)'] = ['PS4796', 'PS4797']
+joint_project_dictionary['Bachelor of Science (Honours) Mathematics and Philosophy'] = ['SA4796', 'SA4797']
+joint_project_dictionary['Bachelor of Science (Honours) Mathematics and Philosophy'] = ['SA4796', 'SA4797']
+joint_project_dictionary['Master of Arts (Honours) Art History and Mathematics'] = ['AH4795']
+joint_project_dictionary['Master of Arts (Honours) Mathematics and Medieval History'] = ['HI4797']
+joint_project_dictionary['Bachelor of Science (Honours) Biology and Mathematics'] = ['BL4797']
+joint_project_dictionary['Master of Arts (Honours) International Relations and Mathematics'] = ['IR4795']
+joint_project_dictionary['Master of Arts (Honours) Arabic and Mathematics'] = ['ML4794']
+
 def find_missing_programme_requirements(student):
     """check that the student fulfils their honours requirements
     
@@ -608,14 +621,9 @@ takes a total of 120 credits per year and that the student takes at least 120 cr
         list_of_adviser_recommendations.append('This is a joint honours programme and the adviser needs to manually check that the student \
 takes a total of 120 credits per year and that they take at least 90 credits at 4000 level')
 
-    # BSC COMPUTER SCIENCE AND MATHS
-    elif student.programme_name == 'Bachelor of Science (Honours) Computer Science and Mathematics':
-        approved_project_codes = ['MT4599', 'CS4796']
-        missed_requirement, adviser_recommendation = check_joint_honours_requirements(student, approved_project_codes)
-        list_of_missed_requirements.append(missed_requirement)
-        list_of_adviser_recommendations.append(adviser_recommendation)
     ### JOINT HONOURS REQUIREMENTS ###
-    elif student.programme_name in ['Master of Arts (Honours) Mathematics and Philosophy',
+    elif student.programme_name in ['Bachelor of Science (Honours) Computer Science and Mathematics',
+                                    'Master of Arts (Honours) Mathematics and Philosophy',
                                     'Bachelor of Science (Honours) Chemistry and Mathematics',
                                     'Bachelor of Science (Honours) Mathematics and Psychology (BPS Recognition Route)',
                                     'Master of Arts (Honours) English and Mathematics',
@@ -642,7 +650,7 @@ takes a total of 120 credits per year and that they take at least 90 credits at 
 
     return missed_requirements, adviser_recommendations
     
-def check_joint_honours_requirements(student, approved_honours_projects = []):
+def check_joint_honours_requirements(student):
     """Check whether a student meets the requirements for a joint honours programme, 
     such as the Bachelor of Science (Honours) Chemistry and Mathematics or the
     Master of Arts (Honours) Mathematics and Philosophy. These requirements can be used as a
@@ -677,10 +685,11 @@ def check_joint_honours_requirements(student, approved_honours_projects = []):
         list_of_missed_requirements.append('Student is only taking ' + str(number_of_MT350X_modules) + ' modules out of MT3501-MT3504 (instead of 3)')
         
     # check there is a final year project
-    if len(approved_honours_projects) == 0:
-        list_of_project_codes = ['MT4599']
+    if student.programme_name in joint_project_dictionary.keys():
+        list_of_project_codes = joint_project_dictionary[student.programme_name]
     else:
-        list_of_project_codes = approved_honours_projects
+        list_of_project_codes = []
+    list_of_project_codes += ['MT4594', 'MT4796','MT4599']
     number_final_year_projects= student.get_number_of_modules_in_list(list_of_project_codes)
     if number_final_year_projects ==0:
         list_of_missed_requirements.append('Student is not taking an allowed final year project')
@@ -691,7 +700,9 @@ def check_joint_honours_requirements(student, approved_honours_projects = []):
         # check that the student is actually taking it in year 4
         this_year = student.honours_module_choices[student.honours_module_choices['Module code'] == final_year_module_code]['Honours year'].iloc[0]
         if this_year != 'Year 2':
-            list_of_missed_requirements.append('Student is not taking their final year project in their final year.')
+            list_of_missed_requirements.append('Student is not taking their final year project in their final year')
+        if final_year_module_code != 'MT4599':
+            list_of_adviser_recommendations.append('Student has chosen the joint honours project ' + final_year_module_code + ' which requires a letter of agreement')
     
     # check that the student is taking at least 120 credits (8 modules) in MT modules (60 modules any code + 15 modules final year project + 45 credits of MT3501-MT3508)
     # while also checking that there are not too many dip-down ID/VP modules
