@@ -54,7 +54,7 @@ def find_missing_programme_requirements(student):
         for entry in student.z_coded_modules:
             advise_string += entry
             if entry != student.z_coded_modules[-1]:
-                warning_string += ' and '
+                advise_string += ' and '
         advise_string += ' have been treated as passed even though they are z-coded - action may be required if these are failed'
         list_of_adviser_recommendations.append(advise_string)
 
