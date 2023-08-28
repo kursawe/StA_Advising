@@ -478,7 +478,7 @@ takes a total of 120 credits per year')
             list_of_missed_requirements.append('Student planning less then 90 credits (6 modules) in MT modules')
 
         # check there is a final year project
-        list_of_project_codes = ['MT4596', 'MT4599', 'PH4111']
+        list_of_project_codes = ['MT4796', 'MT4599', 'PH4111']
         number_final_year_projects= student.get_number_of_modules_in_list(list_of_project_codes)
         if number_final_year_projects !=1:
             list_of_missed_requirements.append('Student is not taking an allowed final year project')
