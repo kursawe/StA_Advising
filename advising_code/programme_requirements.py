@@ -484,8 +484,8 @@ takes a total of 120 credits per year')
             list_of_missed_requirements.append('Student is not taking an allowed final year project')
         else:
             # check that the student is actually taking it in year 4
-            if 'MT4596' in student.full_module_list:
-                this_year = student.honours_module_choices[student.honours_module_choices['Module code'] == 'MT4596']['Honours year'].iloc[0]
+            if 'MT4796' in student.full_module_list:
+                this_year = student.honours_module_choices[student.honours_module_choices['Module code'] == 'MT4796']['Honours year'].iloc[0]
             elif 'MT4599' in student.full_module_list:
                 this_year = student.honours_module_choices[student.honours_module_choices['Module code'] == 'MT4599']['Honours year'].iloc[0]
             else:
