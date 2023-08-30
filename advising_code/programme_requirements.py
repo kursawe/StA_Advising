@@ -721,6 +721,12 @@ def check_joint_honours_requirements(student):
             list_of_missed_requirements.append('Student is taking too many modules as dip-down or in ID/VP moduels (which is not allowed)')
         else:
             list_of_missed_requirements.append('Student is not taking enough credits (less than 8 modules) among MT modules')
+            
+    # check 5000 level modules
+    list_of_5000_level_modules =  [module for module in student.all_honours_modules if 'MT5' in module or 'ID5059' in module]
+
+    if len(list_of_5000_level_modules) > 0:
+        list_of_missed_requirements.append('Student is planning to take 5000 level modules (which is not allowed for joint honours students)')
 
     # check planned dip-down
     list_of_planned_2000_level_modules = [module for module in student.planned_honours_modules if 'MT2' in module
