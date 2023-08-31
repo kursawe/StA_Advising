@@ -122,7 +122,7 @@ def find_missing_programme_requirements(student):
             list_of_missed_requirements.append('Student is not planning to take enough credits at 4000 level or above')
 
         # remind advisers to get permissions
-        list_of_planned_5000_level_modules = [module for module in student.planned_honours_modules if 'MT5' in module or 'ID5059']
+        list_of_planned_5000_level_modules = [module for module in student.planned_honours_modules if 'MT5' in module or 'ID5059' in module]
         if len(list_of_planned_5000_level_modules) >0:
             list_of_adviser_recommendations.append('Student is planning to take 5000 level modules (which will require permission)')
 
