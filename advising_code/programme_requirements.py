@@ -90,8 +90,10 @@ def find_missing_programme_requirements(student):
         # check there is a final year project
         list_of_project_codes = ['MT4598', 'MT4599']
         number_final_year_projects= student.get_number_of_modules_in_list(list_of_project_codes)
-        if number_final_year_projects !=1:
+        if number_final_year_projects <1:
             list_of_missed_requirements.append('Student is not taking an allowed final year project')
+        elif number_final_year_projects >1:
+            list_of_missed_requirements.append('Student selected multiple final year projects')
         else:
             # check that the student is actually taking it in year 4
             if 'MT4598' in student.full_module_list:
