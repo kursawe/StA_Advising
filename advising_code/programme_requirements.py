@@ -476,7 +476,8 @@ takes a total of 120 credits per year')
                 
         # check that there are at least 90 credits of MT modules across both honours years
         list_of_all_MT_modules = [module for module in student.all_honours_modules if 'MT3' in module 
-                                                                                   or 'MT4' in module]
+                                                                                   or 'MT4' in module
+                                                                                   or 'ID4001' in module]
         if len(list_of_all_MT_modules) < 6:
             list_of_missed_requirements.append('Student planning less then 90 credits (6 modules) in MT modules')
 
