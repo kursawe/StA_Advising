@@ -479,7 +479,7 @@ takes a total of 120 credits per year')
                                                                                    or 'MT4' in module
                                                                                    or 'ID4001' in module]
         if len(list_of_all_MT_modules) < 6:
-            list_of_missed_requirements.append('Student planning less then 90 credits (6 modules) in MT modules')
+            list_of_missed_requirements.append('Student planning less than 90 credits (6 modules) in MT modules')
 
         # check there is a final year project
         list_of_project_codes = ['MT4796', 'MT4599', 'PH4111']
