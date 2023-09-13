@@ -75,6 +75,21 @@ class Student():
         
         # and a list of planned honours modules
         self.planned_honours_modules = self.honours_module_choices['Module code'].tolist()
+    
+    def update_honours_module_choices(self, additional_honours_module_choices):
+        '''add planned honours module choices to student.
+        
+        Parameters :
+        ------------
+        
+        honours_module_choices : pandas dataframe
+            The honours module codes that the studen thas selected. The data frame current contains
+            the following columns ['Honours year', 'Academic year', 'Semester', 'Module code']
+        '''
+        self.honours_module_choices = self.honours_module_choices.append(additional_honours_module_choices)
+        self.full_module_list += additional_honours_module_choices['Module code'].to_list()
+        self.all_honours_modules += additional_honours_module_choices['Module code'].tolist()
+        self.planned_honours_modules += additional_honours_module_choices['Module code'].tolist()
 
     def get_number_of_modules_in_list(self, module_list):
         """Get the number of modules that the student is taking in the module list. Already passed modules and scheduled

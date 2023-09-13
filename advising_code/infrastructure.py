@@ -110,6 +110,55 @@ def parse_excel_form(filename):
     if not isinstance(student_id, int):
         return 'No student ID'
         
+    this_student = collect_student_data(student_id)
+    if isinstance(this_student, str):
+        return this_student
+   
+    max_selected_honours_year_string = this_student.honours_module_choices['Honours year'].max()
+    if pd.isna(max_selected_honours_year_string):
+        first_year_to_read = this_student.current_honours_year
+    else: 
+        max_selected_honours_year = int(max_selected_honours_year_string[5])
+        first_year_to_read = max_selected_honours_year + 1
+    
+    # read in modules for all honours years that have not happened yet
+
+    module_table = []
+    for remaining_honours_year in range(first_year_to_read,this_student.expected_honours_years + 1):
+        year_key = 'Year ' + str(remaining_honours_year)
+        calendar_year = 23 + remaining_honours_year - this_student.current_honours_year
+        calendar_year_string = '20' + str(calendar_year) + '/20' + str(calendar_year + 1)
+        for semester_number in [1,2]:
+            semester_modules = get_modules_under_header(sheet, year_key + ' of Honours: Semester ' + str(semester_number)) 
+            for module in semester_modules:
+                module_table.append([year_key, calendar_year_string, 'S' + str(semester_number), module,])
+
+   # Turn this all into a nice pandas data frame
+    honours_module_choices = pd.DataFrame(module_table, columns = ['Honours year', 'Academic year', 'Semester', 'Module code'])
+    
+    this_student.update_honours_module_choices(honours_module_choices)
+    print(this_student.honours_module_choices)
+
+    # return the student
+    return this_student
+
+def collect_student_data(student_id):
+    """Collects all available data for the student with the given ID
+    
+    Parameters :
+    -----------
+    
+    student_id : int
+        the student id
+        
+    Returns :
+    ---------
+    
+    student : instance of Student class or string
+        an object with student attributes. If it's a string then it's a warning
+        message about what went wrong
+    """
+    # process data base here
     
     # Now that we have the student ID we can look up the student in the database:
     current_directory = os.path.dirname(os.path.abspath(__file__))
@@ -137,7 +186,7 @@ def parse_excel_form(filename):
             student_not_yet_found = False
             student_data_base = this_data_base[this_data_base['Student ID'] == student_id]
         data_base_index += 1
-    
+        
     if student_not_yet_found:
         return 'contains invalid student ID ' + str(student_id)
 
@@ -218,38 +267,16 @@ def parse_excel_form(filename):
         data_base_of_passed_modules_this_year = data_base_of_passed_modules[data_base_of_passed_modules['Year']==calendar_year_string]
         passed_modules_this_hear = data_base_of_passed_modules_this_year['Module code'].to_list()
         passed_honours_modules += passed_modules_this_hear
-    
-    # read in modules for all honours years that have not happened yet
-    module_table = []
-    
-    for remaining_honours_year in range(current_honours_year,expected_honours_years + 1):
-        year_key = 'Year ' + str(remaining_honours_year)
-        calendar_year = 23 + remaining_honours_year - current_honours_year
-        calendar_year_string = '20' + str(calendar_year) + '/20' + str(calendar_year + 1)
-        for semester_number in [1,2]:
-            semester_modules = get_modules_under_header(sheet, year_key + ' of Honours: Semester ' + str(semester_number)) 
-            for module in semester_modules:
-                module_table.append([year_key, calendar_year_string, 'S' + str(semester_number), module,])
 
-    # make a table for modules that have been passed
-    passed_module_table = []
-    
-    for passed_module in passed_modules:
-        module_data_row = student_data_base[student_data_base['Module code'] == passed_module]
-        academic_year = module_data_row['Year'].values[0]
-        semester = module_data_row['Semester'].values[0]
-        this_year = int(academic_year[2:4])
-        this_honours_year =  this_year - 23 + current_honours_year
-        this_honours_year_string = 'Year ' + str(this_honours_year)
-        passed_module_table.append([this_honours_year_string, 
-                                    academic_year, semester, passed_module,])
+    passed_module_table = reduce_official_data_base(data_base_of_passed_modules, current_honours_year) 
 
-    # Turn this all into a nice pandas data frame
-    honours_module_choices = pd.DataFrame(module_table, columns = ['Honours year', 'Academic year', 'Semester', 'Module code'])
-    
-    passed_module_table = pd.DataFrame(passed_module_table, 
-                                       columns = ['Honours year', 'Academic year', 'Semester', 'Module code'])
+    data_base_of_planned_modules = student_data_base[(pd.isna(student_data_base['Assessment result']))]
+    honours_module_choices = reduce_official_data_base(data_base_of_planned_modules, current_honours_year)
+ 
+    # finish processing forms
 
+    # module_table= []
+    # honours_module_choices = pd.DataFrame(module_table, columns = ['Honours year', 'Academic year', 'Semester', 'Module code'])
     this_student = Student(student_id, 
                            full_name,
                            email,
@@ -264,8 +291,44 @@ def parse_excel_form(filename):
                            passed_honours_modules,
                            honours_module_choices)
     
-    # return the student
     return this_student
+ 
+def reduce_official_data_base(data_frame, current_honours_year):
+    '''take a table from the official data base and reduce it to a smaller pandas data frame that only has entries that
+    we care about.
+    
+    Parameters :
+    ------------
+    
+    data_frame : pandas dataframe
+        this must have been constructed from one of the official MMS data base files
+        
+    current_honours_year : int
+        the current honours year of the student being processed
+        
+    Returns :
+    ---------
+    
+    reduced_data_frame : pandas data frame
+        will only contains essential module information
+    '''
+    module_table = []
+    
+    for _,row in data_frame.iterrows():
+        module_code = row['Module code']
+        academic_year = row['Year']
+        semester = row['Semester']
+        this_year = int(academic_year[2:4])
+        this_honours_year =  this_year - 23 + current_honours_year
+        this_honours_year_string = 'Year ' + str(this_honours_year)
+        module_table.append([this_honours_year_string, 
+                                    academic_year, semester, module_code,])
+
+    # Turn this all into a nice pandas data frame
+    reduced_data_frame = pd.DataFrame(module_table, 
+                                       columns = ['Honours year', 'Academic year', 'Semester', 'Module code'])
+    
+    return reduced_data_frame
 
 def generate_summary_data_frame_from_entries(data_list):
     """Generates the summary data frame from the entries for one student.
@@ -607,6 +670,20 @@ def process_folder(folder_name):
         summary_data_frame = summary_data_frame.sort_values(by='Student ID')
 
         return summary_data_frame
+    
+def check_final_year_students():
+    '''
+    Go through the data base, identify final year students, and check their
+    module choices against the programme requirements
+
+    Returns:
+    --------
+    
+    summary_data_frame : pandas data frame
+        Data frame with one column per student. Contains the same columns as the data frame returned
+        by process_form_file()
+    '''
+    print('not yet checking anything')
  
 from .programme_requirements import *
 from .prerequisites import *
