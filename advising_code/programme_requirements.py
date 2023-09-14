@@ -630,6 +630,7 @@ takes a total of 120 credits per year and that they take at least 90 credits at 
                                     'Master of Arts (Honours) Mathematics and Philosophy',
                                     'Bachelor of Science (Honours) Chemistry and Mathematics',
                                     'Bachelor of Science (Honours) Mathematics and Psychology (BPS Recognition Route)',
+                                    'Bachelor of Science (Honours) Mathematics and Psychology',
                                     'Master of Arts (Honours) English and Mathematics',
                                     'Bachelor of Science (Honours) Mathematics and Philosophy',
                                     'Bachelor of Science (Honours) Economics and Mathematics',
