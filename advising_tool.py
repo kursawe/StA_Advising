@@ -24,7 +24,7 @@ if __name__ == "__main__":
     elif os.path.isdir(file_or_folder):
         summary_data_frame = process_folder(file_or_folder)
     elif os.path.isfile(file_or_folder):
-        summary_data_frame = process_form_file(file_or_folder)
+        summary_data_frame = process_form_file_or_student_id(file_or_folder)
     else:
         raise(ValueError('argument is neither a file or a folder. Does it exist?'))
 

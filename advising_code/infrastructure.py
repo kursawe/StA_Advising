@@ -4,25 +4,33 @@ import pandas as pd
 import termcolor
 from .student import *
 import docx
-import pathlib
+import numbers
 
 
 module_catalogue_location = os.path.join(os.path.dirname(__file__),'..','module_catalogue','Module_catalogue.xlsx') 
 module_catalogue = pd.read_excel(module_catalogue_location)
 
-def process_form_file(filename):
+def process_form_file_or_student_id(argument):
     """preforms all advising checks on the 
     submitted form.
     
     Parameters:
     -----------
     
-    filename : string
-        path to the file that is being investigated,
+    argument : string or int
+        if it's a string: path to the file that is being investigated,
         i.e. a filled-in module choice form
+        if it's an integer: a valid student ID
     """ 
-    student_or_warning = parse_excel_form(filename)
-    _,filename_for_output = os.path.split(filename)
+    if isinstance(argument, str):
+        student_or_warning = parse_excel_form(argument)
+        _,filename_for_output = os.path.split(argument)
+    elif isinstance(argument, numbers.Integral):
+        student_or_warning = collect_student_data(argument)
+        filename_for_output = 'student id ' + str(argument)
+    else:
+        raise(ValueError('Could not read argument of process_form_file_or_student, it is not an int or a string'))
+
     if isinstance(student_or_warning, str):
         if student_or_warning == 'No student ID':
             warning_message = 'Could not process ' + filename_for_output + '. The file does not contain a valid student ID.'
@@ -42,8 +50,8 @@ def process_form_file(filename):
         return summary_data_frame
     
     student = student_or_warning
-    print('Processing file ')
-    print(filename)
+    print('Processing file or student')
+    print(str(argument))
     print(' ')
     print('Student ID: ' + str(student.student_id))
     print('Name: ' + student.full_name)
@@ -161,21 +169,8 @@ def collect_student_data(student_id):
     # process data base here
     
     # Now that we have the student ID we can look up the student in the database:
-    current_directory = os.path.dirname(os.path.abspath(__file__))
-    potential_data_files = os.listdir(os.path.join(current_directory,'..', 'student_data'))
-    data_files = []
-    for candidate_filename in potential_data_files:
-       this_filename, file_extension = os.path.splitext(candidate_filename)
-       if file_extension == '.csv':
-           data_files.append(candidate_filename)
-    
-    # turn them all into data base files
-    data_bases = []
-    for data_file_name in data_files:
-        data_path = os.path.join(current_directory,'..', 'student_data', data_file_name)
-        this_data_frame = pd.read_csv(data_path)
-        data_bases.append(this_data_frame)
-    
+    data_bases = get_all_mms_data_bases()
+
     # get a table with only the entries for this student
     student_not_yet_found = True
 
@@ -293,6 +288,33 @@ def collect_student_data(student_id):
     
     return this_student
  
+def get_all_mms_data_bases():
+    '''looks into the student_data folder and loads all data bases in there that it can find into memory.
+    
+    Returns :
+    ---------
+    
+    data_bases: list of pandas data frames
+        each entry of the list is one pandas data frame from a .csv file found in the student_data folder.
+    '''
+    # Now that we have the student ID we can look up the student in the database:
+    current_directory = os.path.dirname(os.path.abspath(__file__))
+    potential_data_files = os.listdir(os.path.join(current_directory,'..', 'student_data'))
+    data_files = []
+    for candidate_filename in potential_data_files:
+       this_filename, file_extension = os.path.splitext(candidate_filename)
+       if file_extension == '.csv':
+           data_files.append(candidate_filename)
+    
+    # turn them all into data base files
+    data_bases = []
+    for data_file_name in data_files:
+        data_path = os.path.join(current_directory,'..', 'student_data', data_file_name)
+        this_data_frame = pd.read_csv(data_path)
+        data_bases.append(this_data_frame)
+    
+    return data_bases
+
 def reduce_official_data_base(data_frame, current_honours_year):
     '''take a table from the official data base and reduce it to a smaller pandas data frame that only has entries that
     we care about.
@@ -642,7 +664,7 @@ def process_folder(folder_name):
     
     summary_data_frame : pandas data frame
         Data frame with one column per student. Contains the same columns as the data frame returned
-        by process_form_file()
+        by process_form_file_or_student_id()
     """
     
     folder_entries = os.listdir(folder_name)
@@ -659,7 +681,7 @@ def process_folder(folder_name):
     else:
         list_of_data_frames = []
         for filename in form_files:
-            this_data_frame = process_form_file(os.path.join(folder_name, filename))
+            this_data_frame = process_form_file_or_student_id(os.path.join(folder_name, filename))
             list_of_data_frames.append(this_data_frame)
             separation_string = '-'*60
             print(' ')
@@ -683,8 +705,34 @@ def check_final_year_students():
         Data frame with one column per student. Contains the same columns as the data frame returned
         by process_form_file()
     '''
-    print('not yet checking anything')
- 
+    # turn them all into data base files
+    data_bases = get_all_mms_data_bases()
+    processed_students = []
+    list_of_summary_data_frames = []
+    for this_data_base in data_bases:
+        these_student_ids = this_data_base['Student ID'].unique()
+        for student_id in these_student_ids:
+            if student_id not in processed_students:
+                processed_students.append(student_id)
+                student_or_warning = collect_student_data(student_id)
+                if isinstance(student_or_warning, str):
+                    colour_code_print_statement(student_or_warning)
+                else:
+                    student= student_or_warning
+                    if student.current_honours_year >= student.expected_honours_years:
+                        this_summary_data_frame = process_form_file_or_student_id(student_id)
+                        list_of_summary_data_frames.append(this_summary_data_frame)
+                        separation_string = '-'*60
+                        print(' ')
+                        print(separation_string)
+                        print(' ')
+
+    summary_data_frame = pd.concat(list_of_summary_data_frames, ignore_index=True)
+
+    summary_data_frame = summary_data_frame.sort_values(by='Student ID')
+
+    return summary_data_frame
+
 from .programme_requirements import *
 from .prerequisites import *
 from .timetabling import *
