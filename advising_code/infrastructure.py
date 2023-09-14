@@ -197,7 +197,9 @@ def collect_student_data(student_id):
     data_base_of_passed_modules = student_data_base[(student_data_base['Assessment result']=='P') | 
                                                     (student_data_base['Reassessment result']=='P') |
                                                     ((student_data_base['Assessment result']=='Z') & (pd.isnull(student_data_base['Reassessment result']))) |
-                                                    ((student_data_base['Assessment result']=='D') & (pd.isnull(student_data_base['Reassessment result'])))]
+                                                    ((student_data_base['Assessment result']=='D') & (pd.isnull(student_data_base['Reassessment result']))) |
+                                                    (student_data_base['Reassessment result']=='P') | 
+                                                    ((student_data_base['Assessment result']=='S') & (~pd.isnull(student_data_base['Assessment grade'])))]
     passed_modules = data_base_of_passed_modules['Module code'].to_list()
     passed_modules = passed_modules
     
