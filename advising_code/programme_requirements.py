@@ -67,6 +67,16 @@ def find_missing_programme_requirements(student):
         advise_string += ' have been treated as passed even though they are deferred - action may be required if these are failed'
         list_of_adviser_recommendations.append(advise_string)
     
+    # Check for study abroad
+    student_studied_abroad = (any('J' in item for item in student.full_module_list) or 
+                              any('MTSAU' in item for item in student.full_module_list) )
+    if student_studied_abroad:
+        list_of_missed_requirements.append('Student studied abroad and will require manual checking - flagged issues can be wrong')
+        
+    # unaccounted years of absence
+    if student.current_honours_year > student.expected_honours_years:
+        list_of_missed_requirements.append('Year could not be inferred, student will require manual checking - flagged issues can be wrong')
+    
     ### BSC MATHEMATICS REQUIREMENTS
     if student.programme_name in ['Bachelor of Science (Honours) Mathematics',
                                   'Master of Arts (Honours) Mathematics']:
@@ -510,8 +520,7 @@ takes a total of 120 credits per year')
         reduced_module_table = full_module_table[(full_module_table['Honours year'] == 'Year 1')]
         year_three_modules = reduced_module_table['Module code'].to_list()
         
-        second_reduced_module_table = full_module_table[full_module_table['Honours year'] == 'Year 0']
-        relevant_subhonours_modules = second_reduced_module_table['Module code'].to_list()
+        relevant_subhonours_modules = student.passed_module_table['Module code'].to_list()
         
         if 'MT2507' in relevant_subhonours_modules and 'MT2506' in relevant_subhonours_modules:
             if 'MT3504' not in year_three_modules:
@@ -521,6 +530,8 @@ takes a total of 120 credits per year')
                 list_of_missed_requirements.append('Student is not taking MT3505 and MT3502 in year 3 (which is a requirement for them)')
         else:
             list_of_missed_requirements.append('Student does not seem to have passed an allowed selection of subhonours MT modules [(MT2506 and MT2507) or (MT2502 and MT2505)]')
+        
+        # import pdb; pdb.set_trace()
                 
         # check that there are at least 90 credits of MT modules across both honours years
         list_of_all_MT_modules = [module for module in student.all_honours_modules if 'MT3' in module 

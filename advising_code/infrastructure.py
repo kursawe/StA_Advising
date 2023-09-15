@@ -189,9 +189,15 @@ def collect_student_data(student_id):
     data_of_module_years = student_data_base['Year'].str.slice(0,4).astype('int')
     earliest_year = data_of_module_years.min()
     
+    leave_of_absence_years = 0
+    for year in range(earliest_year, 2023):
+        if year not in data_of_module_years.to_list():
+            leave_of_absence_years +=1
+            
+   
     #students who took their first module in 2021 will now be in year 3, i.e. 2023-2021+1
     year_of_study = 2023 - earliest_year + 1
-    year_of_study = year_of_study
+    year_of_study = year_of_study - leave_of_absence_years
     
     # identify all modules that the student has passed
     data_base_of_passed_modules = student_data_base[(student_data_base['Assessment result']=='P') | 
@@ -254,6 +260,19 @@ def collect_student_data(student_id):
         
     no_subhonours_years = no_of_programme_years - expected_honours_years
     current_honours_year = year_of_study - no_subhonours_years
+    
+    # updating first honours year if we know when the student has taken the first MT3* module 
+    data_base_of_honours_modules = student_data_base[student_data_base['Module code'].str.contains('MT3')]
+    if not data_base_of_honours_modules.empty:
+        data_of_honours_module_years = data_base_of_honours_modules['Year'].str.slice(0,4).astype('int')
+        first_honours_year = data_of_honours_module_years.min()
+        current_honours_year = 2023 - first_honours_year + 1
+        leave_of_absence_years_honours = 0
+        for year in range(first_honours_year, 2023):
+            if year not in data_of_module_years.to_list():
+                leave_of_absence_years_honours +=1
+        current_honours_year -= leave_of_absence_years_honours
+        year_of_study = current_honours_year + no_subhonours_years
     
     # make a separate data base of passed honours modules
     passed_honours_modules = list()
