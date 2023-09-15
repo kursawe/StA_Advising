@@ -329,7 +329,18 @@ def find_missing_programme_requirements(student):
         if len(list_of_all_MT_modules) <21:
             list_of_missed_requirements.append('Student is taking more than 2 modules as dip-down or dip-across, which is not allowed')
             
+        list_of_2000_level_modules = [module for module in student.planned_honours_modules if 'MT2' in module]
+        if len(list_of_2000_level_modules) >0:
+            list_of_adviser_recommendations.append('Student is planning to take 2000 level modules (which will require permission)')
 
+        list_of_planned_non_maths_modules = [module for module in student.planned_honours_modules if 'MT2' not in module 
+                                                                                        and 'MT3' not in module 
+                                                                                        and 'MT4' not in module 
+                                                                                        and 'MT5' not in module
+                                                                                        and 'ID5059' not in module]
+        if len(list_of_planned_non_maths_modules) >0:
+            list_of_adviser_recommendations.append('Student is planning to take non-MT modules, which requires permission and may affect credit balance')
+ 
             
     ### MMATH STATISTICS REQUIREMENTS ###
     elif student.programme_name == 'Master in Mathematics (Honours) Statistics':
