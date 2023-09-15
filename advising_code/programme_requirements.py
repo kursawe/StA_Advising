@@ -849,14 +849,21 @@ def check_for_120_credits_each_year(student):
     list_of_missed_requirements = []
     list_of_adviser_recommendations = []
     
+    current_honours_year_string = 'Year ' + str(student.current_honours_year)
+    
     #checking total number of modules
     for honours_year in honours_years:
         this_data_base = student.honours_module_choices[student.honours_module_choices['Honours year'] == honours_year]
         if honours_year == 'Year 1' or honours_year == 'Year 2':
-            if len(this_data_base)!=8:
+            if len(this_data_base)<8:
                 list_of_missed_requirements.append('Not collecting 120 credits in ' + honours_year)
-        if honours_year == 'Year 3' and len(this_data_base)!=7:
-            list_of_missed_requirements.append('Not collecting 120 credits in ' + honours_year)
+            elif len(this_data_base) > 8 and honours_year ==current_honours_year_string :
+                list_of_adviser_recommendations.append('Student is planning to overcredit, which requires permission')
+        if honours_year == 'Year 3':
+            if len(this_data_base)<7:
+                list_of_missed_requirements.append('Not collecting 120 credits in ' + honours_year)
+            if ( len(this_data_base)>7 and honours_year == current_honours_year_string ):
+                list_of_adviser_recommendations.append('Student is planning to overcredit, which requires permission')
     
     #checking moduel splits
     for honours_year in honours_years:
