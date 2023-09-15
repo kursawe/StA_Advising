@@ -658,6 +658,7 @@ takes a total of 120 credits per year and that the student takes at least 90 cre
         list_of_adviser_recommendations.append('This is a joint honours programme and the adviser needs to manually check that the student \
 takes a total of 120 credits per year and that the student takes at least 120 credits at 5000 level')
 
+    ## BSC COMPUTER SCIENCE AND STATISTICS REQUIREMENTS
     elif student.programme_name == 'Bachelor of Science (Honours) Computer Science and Statistics':
 
         list_of_MT350X_modules = ['MT3501', 'MT3502', 'MT3503', 'MT3504', 'MT3505', 'MT3506', 'MT3507', 'MT3508']
