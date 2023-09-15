@@ -8,7 +8,6 @@ joint_project_dictionary['Bachelor of Science (Honours) Computer Science and Mat
 joint_project_dictionary['Master of Arts (Honours) Mathematics and Philosophy'] = ['SA4796', 'SA4797']
 joint_project_dictionary['Bachelor of Science (Honours) Mathematics and Psychology (BPS Recognition Route)'] = ['PS4796', 'PS4797']
 joint_project_dictionary['Bachelor of Science (Honours) Mathematics and Philosophy'] = ['SA4796', 'SA4797']
-joint_project_dictionary['Bachelor of Science (Honours) Mathematics and Philosophy'] = ['SA4796', 'SA4797']
 joint_project_dictionary['Master of Arts (Honours) Art History and Mathematics'] = ['AH4795']
 joint_project_dictionary['Master of Arts (Honours) Mathematics and Medieval History'] = ['HI4797']
 joint_project_dictionary['Bachelor of Science (Honours) Biology and Mathematics'] = ['BL4797']
@@ -119,15 +118,24 @@ def find_missing_programme_requirements(student):
         if number_of_unallowed_modules >0:
             list_of_missed_requirements.append('Student is taking a module in MT4794-MT4797')
             
-        # check dip-down and dip-across: no more than two modules should be outside of MT3X to MT5X
-        list_of_all_non_honours_modules = [module for module in student.all_honours_modules if 'MT3' not in module 
-                                                                                        and 'MT4' not in module 
-                                                                                        and 'MT5' not in module
-                                                                                        and 'ID4001' not in module
-                                                                                        and 'ID5059' not in module]
-        if len(list_of_all_non_honours_modules) >2:
-            list_of_missed_requirements.append('Student is taking more than 2 modules as dip-down or dip-across, which is not allowed.')
+        # # check dip-down and dip-across: no more than two modules should be outside of MT3X to MT5X
+        # list_of_all_non_honours_modules = [module for module in student.all_honours_modules if 'MT3' not in module 
+        #                                                                                 and 'MT4' not in module 
+        #                                                                                 and 'MT5' not in module
+        #                                                                                 and 'ID4001' not in module
+        #                                                                                 and 'ID5059' not in module]
+        # if len(list_of_all_non_honours_modules) >2:
+        #     list_of_missed_requirements.append('Student is taking more than 2 modules as dip-down or dip-across, which is not allowed.')
+            
+        list_of_all_MT_modules = [module for module in student.all_honours_modules if 'MT3' in module 
+                                                                                        or 'MT4' in module 
+                                                                                        or 'MT5' in module
+                                                                                        or 'ID4001' in module
+                                                                                        or 'ID5059' in module]
 
+        if len(list_of_all_MT_modules) <14:
+            list_of_missed_requirements.append('Student is taking more than 2 modules as dip-down or dip-across, which is not allowed')
+ 
         # check that there are at least 90 credits (6 modules) at 4000 level or above
         list_of_4000_and_5000_modules = [module for module in student.all_honours_modules if 'MT4' in module or 'MT5' in module]
         if len(list_of_4000_and_5000_modules) <6:
@@ -147,6 +155,8 @@ def find_missing_programme_requirements(student):
                                                                                         and 'MT4' not in module 
                                                                                         and 'MT5' not in module
                                                                                         and 'ID5059' not in module]
+
+
         if len(list_of_planned_non_maths_modules) >0:
             list_of_adviser_recommendations.append('Student is planning to take non-MT modules, which requires permission and may affect credit balance')
 
