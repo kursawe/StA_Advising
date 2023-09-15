@@ -10,7 +10,7 @@ joint_project_dictionary['Bachelor of Science (Honours) Mathematics and Psycholo
 joint_project_dictionary['Bachelor of Science (Honours) Mathematics and Philosophy'] = ['SA4796', 'SA4797']
 joint_project_dictionary['Master of Arts (Honours) Art History and Mathematics'] = ['AH4795']
 joint_project_dictionary['Master of Arts (Honours) Mathematics and Medieval History'] = ['HI4797']
-joint_project_dictionary['Bachelor of Science (Honours) Biology and Mathematics'] = ['BL4797']
+joint_project_dictionary['Bachelor of Science (Honours) Biology and Mathematics'] = ['BL4797','BL4796']
 joint_project_dictionary['Master of Arts (Honours) International Relations and Mathematics'] = ['IR4795']
 joint_project_dictionary['Master of Arts (Honours) Arabic and Mathematics'] = ['ML4794']
 
@@ -810,7 +810,8 @@ def check_joint_honours_requirements(student):
                                                                                     or 'MT3' in module 
                                                                                     or 'MT4' in module
                                                                                     or 'ID4001' in module
-                                                                                    or 'VP' in module]
+                                                                                    or 'VP' in module
+                                                                                    or final_year_module_code in module]
 
     if len(list_of_all_allowed_modules) <8 or len(list_of_all_MT_modules) < 7:
         if len(list_of_all_MT_modules) < 7 and len(list_of_all_allowed_modules) > 7:
