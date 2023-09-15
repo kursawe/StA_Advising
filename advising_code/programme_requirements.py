@@ -568,23 +568,23 @@ takes a total of 120 credits per year and that the student takes at least 90 cre
         year_three_modules = reduced_module_table['Module code'].to_list()
         
         second_reduced_module_table = full_module_table[full_module_table['Honours year'] == 'Year 0']
-        relevant_subhonours_modules = second_reduced_module_table['Module code'].to_list()
+        relevant_subhonours_modules = student.passed_module_table['Module code'].to_list()
         
         third_reduced_module_table = full_module_table[full_module_table['Honours year'] == 'Year 2']
         year_four_modules = third_reduced_module_table['Module code'].to_list()
 
         # Check the analysis part of the requirements
         if 'MT2507' in relevant_subhonours_modules and 'MT2506' in relevant_subhonours_modules:
-            if 'MT3504' not in year_three_modules:
+            if 'MT3504' not in year_three_modules and 'MT3504' not in student.passed_modules:
                 list_of_missed_requirements.append('Student is not taking MT3504 in year 3 (which is required for them)')
         elif 'MT2502' in relevant_subhonours_modules and 'MT2505' in relevant_subhonours_modules:
-            if 'MT3502' not in year_three_modules or 'MT3505' not in year_three_modules:
+            if ('MT3502' not in year_three_modules and 'MT3502' not in student.passed_modules) or ('MT3505' not in year_three_modules and 'MT3505' not in student.passed_modules):
                 list_of_missed_requirements.append('Student is not taking MT3505 and MT3502 in year 3 (which is a requirement for them)')
         else:
             list_of_missed_requirements.append('Student does not seem to have an allowed selection of subhonours MT modules')
                 
         # Check the linear mathematics part of the requirements:
-        if 'MT3501' not in year_three_modules:
+        if 'MT3501' not in year_three_modules and 'MT3501' not in student.passed_modules:
             list_of_missed_requirements.append('Student is not taking MT3501 in year 3, which is a requirement')
         
         # check fourth year requirement

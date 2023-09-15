@@ -205,7 +205,8 @@ def collect_student_data(student_id):
                                                     ((student_data_base['Assessment result']=='Z') & (pd.isnull(student_data_base['Reassessment result']))) |
                                                     ((student_data_base['Assessment result']=='D') & (pd.isnull(student_data_base['Reassessment result']))) |
                                                     (student_data_base['Reassessment result']=='P') | 
-                                                    ((student_data_base['Assessment result']=='S') & (~pd.isnull(student_data_base['Assessment grade'])))]
+                                                    ((student_data_base['Assessment result']=='S') & (~pd.isnull(student_data_base['Assessment grade'])))|
+                                                    ((student_data_base['Assessment result']=='SP') & (~pd.isnull(student_data_base['Assessment grade'])))]
     passed_modules = data_base_of_passed_modules['Module code'].to_list()
     passed_modules = passed_modules
     
@@ -260,7 +261,17 @@ def collect_student_data(student_id):
         
     no_subhonours_years = no_of_programme_years - expected_honours_years
     current_honours_year = year_of_study - no_subhonours_years
-    
+   
+    # make a separate data base of passed honours modules
+    passed_honours_modules = list()
+    for previous_honours_year in range(1,current_honours_year):
+        year_difference = current_honours_year - previous_honours_year  
+        year_number = 23-year_difference
+        calendar_year_string = '20' + str(year_number) + '/20' + str(year_number + 1)
+        data_base_of_passed_modules_this_year = data_base_of_passed_modules[data_base_of_passed_modules['Year']==calendar_year_string]
+        passed_modules_this_hear = data_base_of_passed_modules_this_year['Module code'].to_list()
+        passed_honours_modules += passed_modules_this_hear
+
     # updating first honours year if we know when the student has taken the first MT3* module 
     data_base_of_honours_modules = student_data_base[student_data_base['Module code'].str.contains('MT3')]
     if not data_base_of_honours_modules.empty:
@@ -273,16 +284,15 @@ def collect_student_data(student_id):
                 leave_of_absence_years_honours +=1
         current_honours_year -= leave_of_absence_years_honours
         year_of_study = current_honours_year + no_subhonours_years
-    
-    # make a separate data base of passed honours modules
-    passed_honours_modules = list()
-    for previous_honours_year in range(1,current_honours_year):
-        year_difference = current_honours_year - previous_honours_year  
-        year_number = 23-year_difference
-        calendar_year_string = '20' + str(year_number) + '/20' + str(year_number + 1)
-        data_base_of_passed_modules_this_year = data_base_of_passed_modules[data_base_of_passed_modules['Year']==calendar_year_string]
-        passed_modules_this_hear = data_base_of_passed_modules_this_year['Module code'].to_list()
-        passed_honours_modules += passed_modules_this_hear
+        # use this information to get a more accurate guess of what honours modules they have taken
+        passed_honours_modules = list()
+        for previous_year in range(first_honours_year,2023):
+            calendar_year_string = str(previous_year) + '/' + str(previous_year + 1)
+            data_base_of_passed_modules_this_year = data_base_of_passed_modules[data_base_of_passed_modules['Year']==calendar_year_string]
+            passed_modules_this_hear = data_base_of_passed_modules_this_year['Module code'].to_list()
+            passed_honours_modules += passed_modules_this_hear
+
+
 
     passed_module_table = reduce_official_data_base(data_base_of_passed_modules, current_honours_year) 
 
