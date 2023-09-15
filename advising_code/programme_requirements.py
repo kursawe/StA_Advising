@@ -5,8 +5,10 @@ import pandas as pd
 # a dictionary of possible joint projects
 joint_project_dictionary = {}
 joint_project_dictionary['Bachelor of Science (Honours) Computer Science and Mathematics'] = ['CS4796']
+joint_project_dictionary['Bachelor of Science (Honours) Computer Science and Statistics'] = ['CS4796']
 joint_project_dictionary['Master of Arts (Honours) Mathematics and Philosophy'] = ['SA4796', 'SA4797']
 joint_project_dictionary['Bachelor of Science (Honours) Mathematics and Psychology (BPS Recognition Route)'] = ['PS4796', 'PS4797']
+joint_project_dictionary['Bachelor of Science (Honours) Psychology and Statistics'] = ['PS4796', 'PS4797']
 joint_project_dictionary['Bachelor of Science (Honours) Mathematics and Philosophy'] = ['SA4796', 'SA4797']
 joint_project_dictionary['Master of Arts (Honours) Art History and Mathematics'] = ['AH4795']
 joint_project_dictionary['Master of Arts (Honours) Mathematics and Medieval History'] = ['HI4797']
@@ -77,8 +79,8 @@ def find_missing_programme_requirements(student):
         list_of_missed_requirements.append('Student studied abroad and will require manual checking - flagged issues can be wrong')
     
     ### BSC MATHEMATICS REQUIREMENTS
-    if student.programme_name in ['Bachelor of Science (Honours) Mathematics',
-                                  'Master of Arts (Honours) Mathematics']:
+    if ( student.programme_name  == 'Bachelor of Science (Honours) Mathematics' or
+         student.programme_name  == 'Master of Arts (Honours) Mathematics'):
         # check the credit load
         missed_requirement, adviser_recommendation = check_for_120_credits_each_year(student)
         list_of_missed_requirements.append(missed_requirement)
@@ -418,7 +420,8 @@ def find_missing_programme_requirements(student):
             list_of_adviser_recommendations.append('Student is planning to take non-MT modules, which requires permission and may affect credit balance')
 
     ### MA STATISTICS REQUIREMENTS ###
-    elif student.programme_name in ['Bachelor of Science (Honours) Statistics','Master of Arts (Honours) Statistics']:
+    elif ( student.programme_name  == 'Bachelor of Science (Honours) Statistics' or 
+           student.programme_name == 'Master of Arts (Honours) Statistics') :
         # check the credit load
         missed_requirement, adviser_recommendation = check_for_120_credits_each_year(student)
         list_of_missed_requirements.append(missed_requirement)
@@ -659,7 +662,8 @@ takes a total of 120 credits per year and that the student takes at least 90 cre
 takes a total of 120 credits per year and that the student takes at least 120 credits at 5000 level')
 
     ## BSC COMPUTER SCIENCE AND STATISTICS REQUIREMENTS
-    elif student.programme_name == 'Bachelor of Science (Honours) Computer Science and Statistics':
+    elif ( student.programme_name == 'Bachelor of Science (Honours) Computer Science and Statistics' or
+           student.programme_name == 'Bachelor of Science (Honours) Psychology and Statistics' ):
 
         list_of_MT350X_modules = ['MT3501', 'MT3502', 'MT3503', 'MT3504', 'MT3505', 'MT3506', 'MT3507', 'MT3508']
         number_of_MT350X_modules = student.get_number_of_modules_in_list(list_of_MT350X_modules)
@@ -669,6 +673,7 @@ takes a total of 120 credits per year and that the student takes at least 120 cr
         list_of_stats_modules_1 = ['MT4531','MT4606']
         number_of_stats_modules_1 = student.get_number_of_modules_in_list(list_of_stats_modules_1)
         if number_of_stats_modules_1 == 0:
+            print('I am here for some reason')
             list_of_missed_requirements.append('Student not taking a module in [MT4531,MT4606]')
 
         list_of_stats_modules_2 = ['MT4113', 'MT4527', 'MT4528', 'MT4530', 'MT4537', 'MT4539', 'MT4607', 'MT4608', 'MT4609', 'MT4614']
@@ -677,7 +682,12 @@ takes a total of 120 credits per year and that the student takes at least 120 cr
             list_of_missed_requirements.append('Student not taking a module in [MT4113, MT4527, MT4528, MT4530, MT4537, MT4539, MT4607, MT4608, MT4609, MT4614]')
 
         # check there is a final year project
-        list_of_project_codes = ['MT4599','CS4796','MT4794','MT4796']
+        if student.programme_name in joint_project_dictionary.keys():
+            list_of_project_codes = joint_project_dictionary[student.programme_name]
+        else:
+            list_of_project_codes = []
+        list_of_project_codes += ['MT4794', 'MT4796','MT4599']
+
         number_final_year_projects= student.get_number_of_modules_in_list(list_of_project_codes)
         if number_final_year_projects !=1:
             list_of_missed_requirements.append('Student is not taking an allowed final year project')
@@ -731,7 +741,8 @@ takes a total of 120 credits per year and that they take at least 90 credits at 
                                     'Bachelor of Science (Honours) Biology and Mathematics',
                                     'Master of Arts (Honours) International Relations and Mathematics',
                                     'Master of Arts (Honours) Economics and Mathematics',
-                                    'Master of Arts (Honours) Arabic and Mathematics']:
+                                    'Master of Arts (Honours) Arabic and Mathematics',
+                                    'Master of Arts (Honours) Mathematics and Modern History']:
         
         missed_requirement, adviser_recommendation = check_joint_honours_requirements(student)
         list_of_missed_requirements.append(missed_requirement)
@@ -789,7 +800,7 @@ def check_joint_honours_requirements(student):
     number_final_year_projects= student.get_number_of_modules_in_list(list_of_project_codes)
     if number_final_year_projects ==0:
         list_of_missed_requirements.append('Student is not taking an allowed final year project')
-        import pdb; pdb.set_trace()
+        final_year_module_code = '000000'
     elif number_final_year_projects >1:
         list_of_missed_requirements.append('Student is taking too many final year projects')
     else:
