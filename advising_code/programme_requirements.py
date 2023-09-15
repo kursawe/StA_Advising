@@ -676,13 +676,14 @@ takes a total of 120 credits per year and that the student takes at least 120 cr
             list_of_missed_requirements.append('Student not taking a module in [MT4113, MT4527, MT4528, MT4530, MT4537, MT4539, MT4607, MT4608, MT4609, MT4614]')
 
         # check there is a final year project
-        list_of_project_codes = ['MT4599']
+        list_of_project_codes = ['MT4599','CS4796','MT4794','MT4796']
         number_final_year_projects= student.get_number_of_modules_in_list(list_of_project_codes)
         if number_final_year_projects !=1:
             list_of_missed_requirements.append('Student is not taking an allowed final year project')
         else:
+            (final_year_module_code,) = set.intersection(set(student.full_module_list),set(list_of_project_codes))
             # check that the student is actually taking it in year 4
-            this_year = student.honours_module_choices[student.honours_module_choices['Module code'] == 'MT4599']['Honours year'].iloc[0]
+            this_year = student.honours_module_choices[student.honours_module_choices['Module code'] == final_year_module_code]['Honours year'].iloc[0]
             if this_year != 'Year 2':
                 list_of_missed_requirements.append('Student is not taking their final year project in their final year.')
         
@@ -695,7 +696,8 @@ takes a total of 120 credits per year and that the student takes at least 120 cr
                                                                                         or 'MT3' in module 
                                                                                         or 'MT4' in module
                                                                                         or 'ID4001' in module
-                                                                                        or 'VP' in module]
+                                                                                        or 'VP' in module
+                                                                                        or 'CS4796' in module]
 
         if len(list_of_all_allowed_modules) <8 or len(list_of_all_MT_modules) < 7:
             if len(list_of_all_MT_modules) < 7 and len(list_of_all_allowed_modules) > 7:
@@ -782,10 +784,11 @@ def check_joint_honours_requirements(student):
         list_of_project_codes = joint_project_dictionary[student.programme_name]
     else:
         list_of_project_codes = []
-    list_of_project_codes += ['MT4594', 'MT4796','MT4599']
+    list_of_project_codes += ['MT4794', 'MT4796','MT4599']
     number_final_year_projects= student.get_number_of_modules_in_list(list_of_project_codes)
     if number_final_year_projects ==0:
         list_of_missed_requirements.append('Student is not taking an allowed final year project')
+        import pdb; pdb.set_trace()
     elif number_final_year_projects >1:
         list_of_missed_requirements.append('Student is taking too many final year projects')
     else:
