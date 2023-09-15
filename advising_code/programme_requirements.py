@@ -37,6 +37,10 @@ def find_missing_programme_requirements(student):
     list_of_missed_requirements = []
     list_of_adviser_recommendations = []
     
+    # unaccounted years of absence
+    if student.current_honours_year > student.expected_honours_years:
+        list_of_missed_requirements.append('Year could not be inferred, student will require manual checking - flagged issues can be wrong')
+
     # do some sanity check on the module selection first. 
     if len(set(student.full_module_list)) != len(student.full_module_list):
         double_entry_counter = collections.Counter(student.full_module_list)
@@ -72,10 +76,6 @@ def find_missing_programme_requirements(student):
                               any('MTSAU' in item for item in student.full_module_list) )
     if student_studied_abroad:
         list_of_missed_requirements.append('Student studied abroad and will require manual checking - flagged issues can be wrong')
-        
-    # unaccounted years of absence
-    if student.current_honours_year > student.expected_honours_years:
-        list_of_missed_requirements.append('Year could not be inferred, student will require manual checking - flagged issues can be wrong')
     
     ### BSC MATHEMATICS REQUIREMENTS
     if student.programme_name in ['Bachelor of Science (Honours) Mathematics',
