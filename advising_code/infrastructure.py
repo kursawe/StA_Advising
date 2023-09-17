@@ -118,7 +118,7 @@ def parse_excel_form(filename):
     if not isinstance(student_id, int):
         return 'No student ID'
         
-    this_student = collect_student_data(student_id)
+    this_student = collect_student_data(student_id, include_credits=False)
     if isinstance(this_student, str):
         return this_student
    
@@ -150,7 +150,7 @@ def parse_excel_form(filename):
     # return the student
     return this_student
 
-def collect_student_data(student_id):
+def collect_student_data(student_id, include_credits = True):
     """Collects all available data for the student with the given ID
     
     Parameters :
@@ -206,7 +206,8 @@ def collect_student_data(student_id):
                                                     ((student_data_base['Assessment result']=='D') & (pd.isnull(student_data_base['Reassessment result']))) |
                                                     (student_data_base['Reassessment result']=='P') | 
                                                     ( ( (student_data_base['Assessment result']=='S')|(student_data_base['Assessment result']=='SP') ) & 
-                                                      ( (~pd.isnull(student_data_base['Assessment grade']) & (student_data_base['Assessment grade'] > 7.0) )) )]
+                                                      ( (~pd.isnull(student_data_base['Assessment grade']) & (student_data_base['Assessment grade'] > 7.0) ) |
+                                                          (pd.isnull(student_data_base['Reassessment result']))) )]
     passed_modules = data_base_of_passed_modules['Module code'].to_list()
     passed_modules = passed_modules
     
@@ -216,6 +217,12 @@ def collect_student_data(student_id):
     
     data_base_of_deferred_modules = student_data_base[(student_data_base['Assessment result']=='D') & (pd.isnull(student_data_base['Reassessment result']))]
     deferred_modules = data_base_of_deferred_modules['Module code'].to_list()
+
+    data_base_of_s_coded_modules = student_data_base[( (student_data_base['Assessment result']=='S')|(student_data_base['Assessment result']=='SP') ) & 
+                                                     ( (~pd.isnull(student_data_base['Assessment grade']) & (student_data_base['Assessment grade'] < 7.0) ) &
+                                                          (pd.isnull(student_data_base['Reassessment result']))) ]
+
+    s_coded_modules = data_base_of_s_coded_modules['Module code'].to_list()
 
     #identify the programme of the student
     programme_entries = student_data_base['Programme name'].unique()    
@@ -313,6 +320,7 @@ def collect_student_data(student_id):
                            passed_modules,
                            z_coded_modules,
                            deferred_modules,
+                           s_coded_modules,
                            passed_module_table,
                            passed_honours_modules,
                            honours_module_choices)
@@ -346,7 +354,7 @@ def get_all_mms_data_bases():
     
     return data_bases
 
-def reduce_official_data_base(data_frame, current_honours_year):
+def reduce_official_data_base(data_frame, current_honours_year, include_credits = True):
     '''take a table from the official data base and reduce it to a smaller pandas data frame that only has entries that
     we care about.
     
@@ -371,15 +379,25 @@ def reduce_official_data_base(data_frame, current_honours_year):
         module_code = row['Module code']
         academic_year = row['Year']
         semester = row['Semester']
+        credits = row['Credits available']
         this_year = int(academic_year[2:4])
         this_honours_year =  this_year - 23 + current_honours_year
         this_honours_year_string = 'Year ' + str(this_honours_year)
-        module_table.append([this_honours_year_string, 
+        if include_credits:
+            module_table.append([this_honours_year_string, 
+                                    academic_year, semester, module_code,credits,])
+        else:
+            module_table.append([this_honours_year_string, 
                                     academic_year, semester, module_code,])
+            
 
     # Turn this all into a nice pandas data frame
-    reduced_data_frame = pd.DataFrame(module_table, 
-                                       columns = ['Honours year', 'Academic year', 'Semester', 'Module code'])
+    if include_credits:
+        reduced_data_frame = pd.DataFrame(module_table, 
+                                           columns = ['Honours year', 'Academic year', 'Semester', 'Module code', 'Credits'])
+    else:
+        reduced_data_frame = pd.DataFrame(module_table, 
+                                           columns = ['Honours year', 'Academic year', 'Semester', 'Module code'])
     
     return reduced_data_frame
 

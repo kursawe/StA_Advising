@@ -71,6 +71,16 @@ def find_missing_programme_requirements(student):
                 advise_string += ' and '
         advise_string += ' have been treated as passed even though they are deferred - action may be required if these are failed'
         list_of_adviser_recommendations.append(advise_string)
+        
+    if len(student.s_coded_modules) > 0:
+        advise_string = 'Modules '
+        for entry in student.s_coded_modules:
+            advise_string += entry
+            if entry != student.s_coded_modules[-1]:
+                advise_string += ' and '
+        advise_string += ' have been treated as passed even though they are failed and s-coded - action may be required if these are failed'
+        list_of_adviser_recommendations.append(advise_string)
+ 
     
     # Check for study abroad
     student_studied_abroad = (any('J' in item for item in student.full_module_list) or 
@@ -157,7 +167,6 @@ def find_missing_programme_requirements(student):
                                                                                         and 'MT4' not in module 
                                                                                         and 'MT5' not in module
                                                                                         and 'ID5059' not in module]
-
 
         if len(list_of_planned_non_maths_modules) >0:
             list_of_adviser_recommendations.append('Student is planning to take non-MT modules, which requires permission and may affect credit balance')
@@ -339,6 +348,8 @@ def find_missing_programme_requirements(student):
                                                                                         or 'ID5059' in module]
 
         if len(list_of_all_MT_modules) <21:
+            print(len(list_of_all_MT_modules))
+            print(list_of_all_MT_modules)
             list_of_missed_requirements.append('Student is taking more than 2 modules as dip-down or dip-across, which is not allowed')
             
         list_of_2000_level_modules = [module for module in student.planned_honours_modules if 'MT2' in module]
@@ -541,7 +552,14 @@ def find_missing_programme_requirements(student):
         if 'MT4599' in student.all_honours_modules:
             list_of_missed_requirements.append('Student is taking taking MT4599 (which is not allowed)')
                 
-        list_of_adviser_recommendations.append('This is a joint honours programme and the adviser needs to manually check that the student \
+
+        if 'Credits' in student.passed_module_table:
+            if get_total_honours_credits(student)<360:
+                list_of_missed_requirements.append('Student is not taking a total of 360 credits across honours.')
+            if get_total_credits_at_level(student,5)<120:
+                list_of_missed_requirements.append('Student is not taking a total of 120 credits at 5000 level.')
+        else:
+            list_of_adviser_recommendations.append('This is a joint honours programme and the adviser needs to manually check that the student \
 takes a total of 120 credits per year')
 
     ### BSC MATH AND PHYSICS REQUIREMENTS
@@ -553,18 +571,29 @@ takes a total of 120 credits per year')
         year_three_modules = reduced_module_table['Module code'].to_list()
         
         relevant_subhonours_modules = student.passed_module_table['Module code'].to_list()
-        
-        if 'MT2507' in relevant_subhonours_modules and 'MT2506' in relevant_subhonours_modules:
-            if 'MT3504' not in year_three_modules:
+        # Check the analysis part of the requirements
+        student_took_MT2507_and_MT2506 = 'MT2507' in relevant_subhonours_modules and 'MT2506' in relevant_subhonours_modules
+        student_took_MT2502_and_MT2505 = 'MT2502' in relevant_subhonours_modules and 'MT2505' in relevant_subhonours_modules
+        if student.current_honours_year==1:
+            student_takes_3504 = 'MT3504' in year_three_modules or 'MT3504' in student.passed_modules
+            student_takes_3502_and_3505 = ('MT3502' in year_three_modules or 'MT3502' in student.passed_modules) and ('MT3505' in year_three_modules or 'MT3505' in student.passed_modules)
+        else:
+            student_takes_3504 = 'MT3504' in student.planned_honours_modules or 'MT3504' in student.passed_modules
+            student_takes_3502_and_3505 = (('MT3502' in student.planned_honours_modules or 'MT3502' in student.passed_modules) and 
+                                          ('MT3505' in student.planned_honours_modules or 'MT3505' in student.passed_modules))
+
+        if student_took_MT2507_and_MT2506 and student_took_MT2502_and_MT2505:
+            if not student_takes_3504 and not student_takes_3502_and_3505:
+                list_of_missed_requirements.append('Student is not taking MT3504 or (MT3502 and MT3505) (which is required for them)')
+        elif student_took_MT2507_and_MT2506:
+            if not student_takes_3504:
                 list_of_missed_requirements.append('Student is not taking MT3504 in year 3 (which is required for them)')
-        elif 'MT2502' in relevant_subhonours_modules and 'MT2505' in relevant_subhonours_modules:
-            if 'MT3502' not in year_three_modules or 'MT3505' not in year_three_modules:
+        elif student_took_MT2502_and_MT2505:
+            if not student_takes_3502_and_3505:
                 list_of_missed_requirements.append('Student is not taking MT3505 and MT3502 in year 3 (which is a requirement for them)')
         else:
-            list_of_missed_requirements.append('Student does not seem to have passed an allowed selection of subhonours MT modules [(MT2506 and MT2507) or (MT2502 and MT2505)]')
-        
-        # import pdb; pdb.set_trace()
-                
+            list_of_missed_requirements.append('Student does not seem to have an allowed selection of subhonours MT modules')
+ 
         # check that there are at least 90 credits of MT modules across both honours years
         list_of_all_MT_modules = [module for module in student.all_honours_modules if 'MT3' in module 
                                                                                    or 'MT4' in module
@@ -588,7 +617,14 @@ takes a total of 120 credits per year')
             if this_year != 'Year 2':
                 list_of_missed_requirements.append('Student is not taking their final year project in their final year.')
  
-        list_of_adviser_recommendations.append('This is a joint honours programme and the adviser needs to manually check that the student \
+
+        if 'Credits' in student.passed_module_table:
+            if get_total_honours_credits(student)<240:
+                list_of_missed_requirements.append('Student is not taking a total of 240 credits across honours.')
+            if (get_total_credits_at_level(student,4) + get_total_credits_at_level(student,5) ) <90:
+                list_of_missed_requirements.append('Student is not taking a total of 90 credits at 4000 level.')
+        else:
+            list_of_adviser_recommendations.append('This is a joint honours programme and the adviser needs to manually check that the student \
 takes a total of 120 credits per year and that the student takes at least 90 credits at 4000 level')
 
     ### MASTER MATHEMATICS AND THEORETICAL PHYSICS REQUIREMENTS
@@ -606,11 +642,24 @@ takes a total of 120 credits per year and that the student takes at least 90 cre
         year_four_modules = third_reduced_module_table['Module code'].to_list()
 
         # Check the analysis part of the requirements
-        if 'MT2507' in relevant_subhonours_modules and 'MT2506' in relevant_subhonours_modules:
-            if 'MT3504' not in year_three_modules and 'MT3504' not in student.passed_modules:
+        student_took_MT2507_and_MT2506 = 'MT2507' in relevant_subhonours_modules and 'MT2506' in relevant_subhonours_modules
+        student_took_MT2502_and_MT2505 = 'MT2502' in relevant_subhonours_modules and 'MT2505' in relevant_subhonours_modules
+        if student.current_honours_year==1:
+            student_takes_3504 = 'MT3504' in year_three_modules or 'MT3504' in student.passed_modules
+            student_takes_3502_and_3505 = ('MT3502' in year_three_modules or 'MT3502' in student.passed_modules) and ('MT3505' in year_three_modules or 'MT3505' in student.passed_modules)
+        else:
+            student_takes_3504 = 'MT3504' in student.planned_honours_modules or 'MT3504' in student.passed_modules
+            student_takes_3502_and_3505 = (('MT3502' in student.planned_honours_modules or 'MT3502' in student.passed_modules) and 
+                                          ('MT3505' in student.planned_honours_modules or 'MT3505' in student.passed_modules))
+
+        if student_took_MT2507_and_MT2506 and student_took_MT2502_and_MT2505:
+            if not student_takes_3504 and not student_takes_3502_and_3505:
+                list_of_missed_requirements.append('Student is not taking MT3504 or (MT3502 and MT3505) (which is required for them)')
+        elif student_took_MT2507_and_MT2506:
+            if not student_takes_3504:
                 list_of_missed_requirements.append('Student is not taking MT3504 in year 3 (which is required for them)')
-        elif 'MT2502' in relevant_subhonours_modules and 'MT2505' in relevant_subhonours_modules:
-            if ('MT3502' not in year_three_modules and 'MT3502' not in student.passed_modules) or ('MT3505' not in year_three_modules and 'MT3505' not in student.passed_modules):
+        elif student_took_MT2502_and_MT2505:
+            if not student_takes_3502_and_3505:
                 list_of_missed_requirements.append('Student is not taking MT3505 and MT3502 in year 3 (which is a requirement for them)')
         else:
             list_of_missed_requirements.append('Student does not seem to have an allowed selection of subhonours MT modules')
@@ -658,12 +707,19 @@ takes a total of 120 credits per year and that the student takes at least 90 cre
         if len(list_of_2000_level_modules) >0:
             list_of_adviser_recommendations.append('Student is planning to take 2000 level modules (which will require permission)')
 
-        list_of_adviser_recommendations.append('This is a joint honours programme and the adviser needs to manually check that the student \
+        if 'Credits' in student.passed_module_table:
+            if get_total_honours_credits(student)<360:
+                list_of_missed_requirements.append('Student is not taking a total of 360 credits across honours.')
+            if get_total_credits_at_level(student,5)<120:
+                list_of_missed_requirements.append('Student is not taking a total of 120 credits at 5000 level.')
+        else:
+            list_of_adviser_recommendations.append('This is a joint honours programme and the adviser needs to manually check that the student \
 takes a total of 120 credits per year and that the student takes at least 120 credits at 5000 level')
 
     ## BSC COMPUTER SCIENCE AND STATISTICS REQUIREMENTS
     elif ( student.programme_name == 'Bachelor of Science (Honours) Computer Science and Statistics' or
-           student.programme_name == 'Bachelor of Science (Honours) Psychology and Statistics' ):
+           student.programme_name == 'Bachelor of Science (Honours) Psychology and Statistics' or 
+           student.programme_name == 'Bachelor of Science (Honours) Management Science and Statistics'):
 
         list_of_MT350X_modules = ['MT3501', 'MT3502', 'MT3503', 'MT3504', 'MT3505', 'MT3506', 'MT3507', 'MT3508']
         number_of_MT350X_modules = student.get_number_of_modules_in_list(list_of_MT350X_modules)
@@ -723,7 +779,13 @@ takes a total of 120 credits per year and that the student takes at least 120 cr
         if len(list_of_planned_2000_level_modules) >0:
             list_of_adviser_recommendations.append('Student is planning to take 2000 level modules or ID4001 or VP modules (which all require permission)')
     
-        list_of_adviser_recommendations.append('This is a joint honours programme and the adviser needs to manually check that the student \
+        if 'Credits' in student.passed_module_table:
+            if get_total_honours_credits(student)<240:
+                list_of_missed_requirements.append('Student is not taking a total of 240 credits across honours.')
+            if ( get_total_credits_at_level(student,4) + get_total_credits_at_level(student,5) )<90:
+                list_of_missed_requirements.append('Student is not taking a total of 90 credits at 4000 level.')
+        else:
+            list_of_adviser_recommendations.append('This is a joint honours programme and the adviser needs to manually check that the student \
 takes a total of 120 credits per year and that they take at least 90 credits at 4000 level')
 
     ### JOINT HONOURS REQUIREMENTS ###
@@ -742,7 +804,8 @@ takes a total of 120 credits per year and that they take at least 90 credits at 
                                     'Master of Arts (Honours) International Relations and Mathematics',
                                     'Master of Arts (Honours) Economics and Mathematics',
                                     'Master of Arts (Honours) Arabic and Mathematics',
-                                    'Master of Arts (Honours) Mathematics and Modern History']:
+                                    'Master of Arts (Honours) Mathematics and Modern History',
+                                    'Bachelor of Science (Honours) Management Science and Mathematics']:
         
         missed_requirement, adviser_recommendation = check_joint_honours_requirements(student)
         list_of_missed_requirements.append(missed_requirement)
@@ -757,6 +820,60 @@ takes a total of 120 credits per year and that they take at least 90 credits at 
 
     return missed_requirements, adviser_recommendations
     
+def get_total_honours_credits(student):
+    """Calculate and return the total credits the student took at honours
+    
+    Parameters :
+    ------------
+    
+    student : Student object
+        the student we want to investigate
+    
+    Returns :
+    ---------
+    
+    total_credits : int
+        total number of credtis the student took at honours
+    """
+    passed_honours_module_table = student.passed_module_table[student.passed_module_table['Honours year'].isin(['Year 1',
+                                                                                                                'Year 2',
+                                                                                                                'Year 3',
+                                                                                                                'Year 4',
+                                                                                                                'Year 5',
+                                                                                                                'Year 6'])]
+    passed_honours_credits = passed_honours_module_table['Credits'].sum()
+    planned_honours_credits = student.honours_module_choices['Credits'].sum()
+    total_credits = passed_honours_credits + planned_honours_credits
+
+    return total_credits
+
+def get_total_credits_at_level(student, level):
+    """Calculate and return the total credits the student took at honours
+    
+    Parameters :
+    ------------
+    
+    student : Student object
+        the student we want to investigate
+    
+    level : int
+        the level we want to sum up. Needs to be 1, 2, 3, 4, or 5.
+    
+    Returns :
+    ---------
+    
+    total_credits : int
+        total number of credits the student took at this level
+    """
+    passed_modules_at_level = student.passed_module_table[student.passed_module_table['Module code'].str[2] == str(level)]
+    passed_credits_at_level = passed_modules_at_level['Credits'].sum()
+
+    planned_modules_at_level = student.honours_module_choices[student.honours_module_choices['Module code'].str[2] == str(level)]
+    planned_credits_at_level = planned_modules_at_level['Credits'].sum()
+    total_credits = passed_credits_at_level + planned_credits_at_level
+    
+    return total_credits
+
 def check_joint_honours_requirements(student):
     """Check whether a student meets the requirements for a joint honours programme, 
     such as the Bachelor of Science (Honours) Chemistry and Mathematics or the
@@ -843,7 +960,13 @@ def check_joint_honours_requirements(student):
     if len(list_of_planned_2000_level_modules) >0:
         list_of_adviser_recommendations.append('Student is planning to take 2000 level modules or ID4001 or VP modules (which all require permission)')
 
-    list_of_adviser_recommendations.append('This is a joint honours programme and the adviser needs to manually check that the student \
+    if 'Credits' in student.passed_module_table:
+            if get_total_honours_credits(student)<240:
+                list_of_missed_requirements.append('Student is not taking a total of 240 credits across honours.')
+            if ( get_total_credits_at_level(student,4) + get_total_credits_at_level(student,5) )<90:
+                list_of_missed_requirements.append('Student is not taking a total of 90 credits at 4000 level.')
+    else:
+        list_of_adviser_recommendations.append('This is a joint honours programme and the adviser needs to manually check that the student \
 takes a total of 120 credits per year and that they take at least 90 credits at 4000 level')
 
 
@@ -882,12 +1005,28 @@ def check_for_120_credits_each_year(student):
         this_data_base = student.honours_module_choices[student.honours_module_choices['Honours year'] == honours_year]
         if honours_year == 'Year 1' or honours_year == 'Year 2':
             if len(this_data_base)<8:
-                list_of_missed_requirements.append('Not collecting 120 credits in ' + honours_year)
+                if 'Credits' in this_data_base.columns:
+                    if this_data_base['Credits'].sum()<120:
+                        definitely_undercrediting = True
+                    else:
+                        definitely_undercrediting = False
+                else:
+                    definitely_undercrediting = True
+                if definitely_undercrediting:
+                    list_of_missed_requirements.append('Not collecting 120 credits in ' + honours_year)
             elif len(this_data_base) > 8 and honours_year ==current_honours_year_string :
                 list_of_adviser_recommendations.append('Student is planning to overcredit, which requires permission')
         if honours_year == 'Year 3':
             if len(this_data_base)<7:
-                list_of_missed_requirements.append('Not collecting 120 credits in ' + honours_year)
+                if 'Credits' in this_data_base.columns:
+                    if this_data_base['Credits'].sum()<120:
+                        definitely_undercrediting = True
+                    else:
+                        definitely_undercrediting = False
+                else:
+                    definitely_undercrediting = True
+                if definitely_undercrediting:
+                    list_of_missed_requirements.append('Not collecting 120 credits in ' + honours_year)
             if ( len(this_data_base)>7 and honours_year == current_honours_year_string ):
                 list_of_adviser_recommendations.append('Student is planning to overcredit, which requires permission')
     
