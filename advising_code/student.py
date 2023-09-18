@@ -11,6 +11,7 @@ class Student():
                  z_coded_modules,
                  deferred_modules,
                  s_coded_modules,
+                 modules_awaiting_reassessment,
                  passed_module_table,
                  passed_honours_modules,
                  honours_module_choices):
@@ -63,6 +64,7 @@ class Student():
         self.z_coded_modules = z_coded_modules
         self.deferred_modules = deferred_modules
         self.s_coded_modules = s_coded_modules
+        self.modules_awaiting_reassessment = modules_awaiting_reassessment
         self.passed_module_table = passed_module_table
         self.passed_honours_modules = passed_honours_modules
         self.honours_module_choices = honours_module_choices

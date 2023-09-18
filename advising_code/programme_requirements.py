@@ -81,6 +81,14 @@ def find_missing_programme_requirements(student):
         advise_string += ' have been treated as passed even though they are failed and s-coded - action may be required if these are failed'
         list_of_adviser_recommendations.append(advise_string)
  
+    if len(student.modules_awaiting_reassessment) > 0:
+        advise_string = 'Modules '
+        for entry in student.modules_awaiting_reassessment:
+            advise_string += entry
+            if entry != student.modules_awaiting_reassessment[-1]:
+                advise_string += ' and '
+        advise_string += ' have been treated as passed even though they are failed and are awaiting reassessment - action may be required if these are failed'
+        list_of_adviser_recommendations.append(advise_string)
     
     # Check for study abroad
     student_studied_abroad = (any('J' in item for item in student.full_module_list) or 

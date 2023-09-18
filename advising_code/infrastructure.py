@@ -204,10 +204,12 @@ def collect_student_data(student_id, include_credits = True):
                                                     (student_data_base['Reassessment result']=='P') |
                                                     ((student_data_base['Assessment result']=='Z') & (pd.isnull(student_data_base['Reassessment result']))) |
                                                     ((student_data_base['Assessment result']=='D') & (pd.isnull(student_data_base['Reassessment result']))) |
-                                                    (student_data_base['Reassessment result']=='P') | 
+                                                    ((student_data_base['Assessment result']=='F') & (pd.isnull(student_data_base['Reassessment result'])) 
+                                                                                                   & (student_data_base['Assessment grade'] > 3.5) ) | 
                                                     ( ( (student_data_base['Assessment result']=='S')|(student_data_base['Assessment result']=='SP') ) & 
                                                       ( (~pd.isnull(student_data_base['Assessment grade']) & (student_data_base['Assessment grade'] > 7.0) ) |
                                                           (pd.isnull(student_data_base['Reassessment result']))) )]
+    data_base_of_passed_modules.drop_duplicates(subset='Module code', keep='last', inplace=True)
     passed_modules = data_base_of_passed_modules['Module code'].to_list()
     passed_modules = passed_modules
     
@@ -217,6 +219,10 @@ def collect_student_data(student_id, include_credits = True):
     
     data_base_of_deferred_modules = student_data_base[(student_data_base['Assessment result']=='D') & (pd.isnull(student_data_base['Reassessment result']))]
     deferred_modules = data_base_of_deferred_modules['Module code'].to_list()
+    
+    data_base_of_modules_for_reassessment = data_base_of_passed_modules[(data_base_of_passed_modules['Assessment result']=='F') & (pd.isnull(data_base_of_passed_modules['Reassessment result'])) 
+                                                                                                   & (data_base_of_passed_modules['Assessment grade'] > 3.5) ]
+    modules_awaiting_reassessment = data_base_of_modules_for_reassessment['Module code'].to_list()
 
     data_base_of_s_coded_modules = student_data_base[( (student_data_base['Assessment result']=='S')|(student_data_base['Assessment result']=='SP') ) & 
                                                      ( (~pd.isnull(student_data_base['Assessment grade']) & (student_data_base['Assessment grade'] < 7.0) ) &
@@ -321,6 +327,7 @@ def collect_student_data(student_id, include_credits = True):
                            z_coded_modules,
                            deferred_modules,
                            s_coded_modules,
+                           modules_awaiting_reassessment,
                            passed_module_table,
                            passed_honours_modules,
                            honours_module_choices)
