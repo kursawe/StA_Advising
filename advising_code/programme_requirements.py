@@ -561,7 +561,7 @@ def find_missing_programme_requirements(student):
             list_of_missed_requirements.append('Student is taking taking MT4599 (which is not allowed)')
                 
 
-        if 'Credits' in student.passed_module_table:
+        if 'Credits' in student.passed_module_table and not student.honours_module_choices['Credits'].isnull().any():
             if get_total_honours_credits(student)<360:
                 list_of_missed_requirements.append('Student is not taking a total of 360 credits across honours.')
             if get_total_credits_at_level(student,5)<120:
@@ -626,7 +626,7 @@ takes a total of 120 credits per year')
                 list_of_missed_requirements.append('Student is not taking their final year project in their final year.')
  
 
-        if 'Credits' in student.passed_module_table:
+        if 'Credits' in student.passed_module_table and not student.honours_module_choices['Credits'].isnull().any():
             if get_total_honours_credits(student)<240:
                 list_of_missed_requirements.append('Student is not taking a total of 240 credits across honours.')
             if (get_total_credits_at_level(student,4) + get_total_credits_at_level(student,5) ) <90:
@@ -715,7 +715,7 @@ takes a total of 120 credits per year and that the student takes at least 90 cre
         if len(list_of_2000_level_modules) >0:
             list_of_adviser_recommendations.append('Student is planning to take 2000 level modules (which will require permission)')
 
-        if 'Credits' in student.passed_module_table:
+        if 'Credits' in student.passed_module_table and not student.honours_module_choices['Credits'].isnull().any():
             if get_total_honours_credits(student)<360:
                 list_of_missed_requirements.append('Student is not taking a total of 360 credits across honours.')
             if get_total_credits_at_level(student,5)<120:
@@ -787,7 +787,7 @@ takes a total of 120 credits per year and that the student takes at least 120 cr
         if len(list_of_planned_2000_level_modules) >0:
             list_of_adviser_recommendations.append('Student is planning to take 2000 level modules or ID4001 or VP modules (which all require permission)')
     
-        if 'Credits' in student.passed_module_table:
+        if 'Credits' in student.passed_module_table and not student.honours_module_choices['Credits'].isnull().any():
             if get_total_honours_credits(student)<240:
                 list_of_missed_requirements.append('Student is not taking a total of 240 credits across honours.')
             if ( get_total_credits_at_level(student,4) + get_total_credits_at_level(student,5) )<90:
@@ -968,7 +968,7 @@ def check_joint_honours_requirements(student):
     if len(list_of_planned_2000_level_modules) >0:
         list_of_adviser_recommendations.append('Student is planning to take 2000 level modules or ID4001 or VP modules (which all require permission)')
 
-    if 'Credits' in student.passed_module_table:
+    if 'Credits' in student.passed_module_table and not student.honours_module_choices['Credits'].isnull().any():
             if get_total_honours_credits(student)<240:
                 list_of_missed_requirements.append('Student is not taking a total of 240 credits across honours.')
             if ( get_total_credits_at_level(student,4) + get_total_credits_at_level(student,5) )<90:
