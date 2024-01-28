@@ -1010,7 +1010,10 @@ def check_for_120_credits_each_year(student):
     
     #checking total number of modules
     for honours_year in honours_years:
-        this_data_base = student.honours_module_choices[student.honours_module_choices['Honours year'] == honours_year]
+        this_planned_data_base = student.honours_module_choices[student.honours_module_choices['Honours year'] == honours_year]
+        this_passed_data_base = student.passed_module_table[student.passed_module_table['Honours year'] == honours_year]
+        this_data_base = pd.concat([this_planned_data_base, this_passed_data_base], ignore_index=True) 
+
         if honours_year == 'Year 1' or honours_year == 'Year 2':
             if len(this_data_base)<8:
                 if 'Credits' in this_data_base.columns:

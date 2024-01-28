@@ -193,7 +193,6 @@ def collect_student_data(student_id, include_credits = True):
     for year in range(earliest_year, 2023):
         if year not in data_of_module_years.to_list():
             leave_of_absence_years +=1
-            
    
     #students who took their first module in 2021 will now be in year 3, i.e. 2023-2021+1
     year_of_study = 2023 - earliest_year + 1
@@ -277,7 +276,7 @@ def collect_student_data(student_id, include_credits = True):
    
     # make a separate data base of passed honours modules
     passed_honours_modules = list()
-    for previous_honours_year in range(1,current_honours_year):
+    for previous_honours_year in range(1,current_honours_year+1):
         year_difference = current_honours_year - previous_honours_year  
         year_number = 23-year_difference
         calendar_year_string = '20' + str(year_number) + '/20' + str(year_number + 1)
@@ -292,26 +291,25 @@ def collect_student_data(student_id, include_credits = True):
         first_honours_year = data_of_honours_module_years.min()
         current_honours_year = 2023 - first_honours_year + 1
         leave_of_absence_years_honours = 0
-        for year in range(first_honours_year, 2023):
+        for year in range(first_honours_year, 2024):
             if year not in data_of_module_years.to_list():
                 leave_of_absence_years_honours +=1
         current_honours_year -= leave_of_absence_years_honours
         year_of_study = current_honours_year + no_subhonours_years
         # use this information to get a more accurate guess of what honours modules they have taken
         passed_honours_modules = list()
-        for previous_year in range(first_honours_year,2023):
+        for previous_year in range(first_honours_year,2024):
             calendar_year_string = str(previous_year) + '/' + str(previous_year + 1)
             data_base_of_passed_modules_this_year = data_base_of_passed_modules[data_base_of_passed_modules['Year']==calendar_year_string]
             passed_modules_this_hear = data_base_of_passed_modules_this_year['Module code'].to_list()
             passed_honours_modules += passed_modules_this_hear
 
 
-
     passed_module_table = reduce_official_data_base(data_base_of_passed_modules, current_honours_year) 
 
     data_base_of_planned_modules = student_data_base[(pd.isna(student_data_base['Assessment result']))]
     honours_module_choices = reduce_official_data_base(data_base_of_planned_modules, current_honours_year)
- 
+    
     # finish processing forms
 
     # module_table= []
