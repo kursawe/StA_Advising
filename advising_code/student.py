@@ -7,6 +7,7 @@ class Student():
                  year_of_study,
                  expected_honours_years,
                  current_honours_year,
+                 current_calendar_year,
                  passed_modules,
                  z_coded_modules,
                  deferred_modules,
@@ -39,6 +40,9 @@ class Student():
             be inferred from the year of study, since Advance Standing Credits (direct entry) need
             to be taken into account
             
+        current_calendar_year : int
+            The current calendar year
+            
         passed_modules : list of strings
             A list containing the module codes of all passed modules
         
@@ -60,6 +64,7 @@ class Student():
         self.year_of_study = year_of_study
         self.expected_honours_years = expected_honours_years
         self.current_honours_year = current_honours_year
+        self.current_calendar_year = current_calendar_year
         self.passed_modules = passed_modules
         self.z_coded_modules = z_coded_modules
         self.deferred_modules = deferred_modules

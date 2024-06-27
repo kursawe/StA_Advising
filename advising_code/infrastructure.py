@@ -134,8 +134,8 @@ def parse_excel_form(filename):
     module_table = []
     for remaining_honours_year in range(first_year_to_read,this_student.expected_honours_years + 1):
         year_key = 'Year ' + str(remaining_honours_year)
-        calendar_year = 23 + remaining_honours_year - this_student.current_honours_year
-        calendar_year_string = '20' + str(calendar_year) + '/20' + str(calendar_year + 1)
+        calendar_year = this_student.current_calendar_year + remaining_honours_year - this_student.current_honours_year
+        calendar_year_string = str(calendar_year) + '/' + str(calendar_year + 1)
         for semester_number in [1,2]:
             semester_modules = get_modules_under_header(sheet, year_key + ' of Honours: Semester ' + str(semester_number)) 
             for module in semester_modules:
@@ -188,14 +188,16 @@ def collect_student_data(student_id, include_credits = True):
     # infer the year of study from the earliest module taken
     data_of_module_years = student_data_base['Year'].str.slice(0,4).astype('int')
     earliest_year = data_of_module_years.min()
+    current_calendar_year = data_of_module_years.max()+1
     
     leave_of_absence_years = 0
-    for year in range(earliest_year, 2023):
+    for year in range(earliest_year, current_calendar_year):
         if year not in data_of_module_years.to_list():
             leave_of_absence_years +=1
    
-    #students who took their first module in 2021 will now be in year 3, i.e. 2023-2021+1
-    year_of_study = 2023 - earliest_year + 1
+    # we add the +1 as the year of steady is 1-indexed instead of 0-indexed
+    # i.e. students starting this year will be in year 1
+    year_of_study = current_calendar_year - earliest_year + 1
     year_of_study = year_of_study - leave_of_absence_years
     
     # identify all modules that the student has passed
@@ -278,8 +280,8 @@ def collect_student_data(student_id, include_credits = True):
     passed_honours_modules = list()
     for previous_honours_year in range(1,current_honours_year+1):
         year_difference = current_honours_year - previous_honours_year  
-        year_number = 23-year_difference
-        calendar_year_string = '20' + str(year_number) + '/20' + str(year_number + 1)
+        year_number = current_calendar_year-year_difference
+        calendar_year_string = str(year_number) + '/' + str(year_number + 1)
         data_base_of_passed_modules_this_year = data_base_of_passed_modules[data_base_of_passed_modules['Year']==calendar_year_string]
         passed_modules_this_hear = data_base_of_passed_modules_this_year['Module code'].to_list()
         passed_honours_modules += passed_modules_this_hear
@@ -289,16 +291,16 @@ def collect_student_data(student_id, include_credits = True):
     if not data_base_of_honours_modules.empty:
         data_of_honours_module_years = data_base_of_honours_modules['Year'].str.slice(0,4).astype('int')
         first_honours_year = data_of_honours_module_years.min()
-        current_honours_year = 2023 - first_honours_year + 1
+        current_honours_year = current_calendar_year - first_honours_year + 1
         leave_of_absence_years_honours = 0
-        for year in range(first_honours_year, 2024):
+        for year in range(first_honours_year, current_calendar_year+1):
             if year not in data_of_module_years.to_list():
                 leave_of_absence_years_honours +=1
         current_honours_year -= leave_of_absence_years_honours
         year_of_study = current_honours_year + no_subhonours_years
         # use this information to get a more accurate guess of what honours modules they have taken
         passed_honours_modules = list()
-        for previous_year in range(first_honours_year,2024):
+        for previous_year in range(first_honours_year,current_calendar_year+1):
             calendar_year_string = str(previous_year) + '/' + str(previous_year + 1)
             data_base_of_passed_modules_this_year = data_base_of_passed_modules[data_base_of_passed_modules['Year']==calendar_year_string]
             passed_modules_this_hear = data_base_of_passed_modules_this_year['Module code'].to_list()
@@ -321,6 +323,7 @@ def collect_student_data(student_id, include_credits = True):
                            year_of_study,
                            expected_honours_years,
                            current_honours_year,
+                           current_calendar_year,
                            passed_modules,
                            z_coded_modules,
                            deferred_modules,
@@ -379,14 +382,16 @@ def reduce_official_data_base(data_frame, current_honours_year, include_credits 
         will only contains essential module information
     '''
     module_table = []
+    data_of_module_years = data_frame['Year'].str.slice(0,4).astype('int')
+    most_recent_year = data_of_module_years.max() +1
     
     for _,row in data_frame.iterrows():
         module_code = row['Module code']
         academic_year = row['Year']
         semester = row['Semester']
         credits = row['Credits available']
-        this_year = int(academic_year[2:4])
-        this_honours_year =  this_year - 23 + current_honours_year
+        this_year = int(academic_year[:4])
+        this_honours_year =  this_year - most_recent_year + current_honours_year
         this_honours_year_string = 'Year ' + str(this_honours_year)
         if include_credits:
             module_table.append([this_honours_year_string, 
