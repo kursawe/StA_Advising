@@ -223,8 +223,6 @@ def find_not_running_modules(student):
             continue
         module_catalogue_entry = module_catalogue[module_catalogue['Module code'] == planned_module_code]
         module_semester = module_catalogue_entry['Semester'].values[0]
-        if planned_module_code == 'MT4005' and planned_academic_year in ['2024/2025', '2026/2027','2028/2029']:
-            module_semester = 'S2'
         # tell if the student picked the wrong semester
         if planned_semester != module_semester and module_semester != 'Full Year':
             not_running_modules_list.append('Selected module ' + planned_module_code + ' for Semester ' +
@@ -247,8 +245,8 @@ def find_not_running_modules(student):
             else:
                 new_academic_year = str(start_year + repeat_index) + '/' + str(start_year + repeat_index + 1)
             list_of_running_academic_years.append(new_academic_year)
-        if planned_module_code == 'MT4005':
-            list_of_running_academic_years = ['2023/2024', '2024/2025', '2026/2027','2028/2029']
+        if planned_module_code == 'MT4614':
+            list_of_running_academic_years = ['2024/2025']
         if planned_academic_year not in list_of_running_academic_years:
             not_running_modules_list.append('Selected module ' + planned_module_code + ' is not running in academic year ' +
                                             str(planned_academic_year))
