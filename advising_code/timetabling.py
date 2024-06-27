@@ -239,7 +239,7 @@ def find_not_running_modules(student):
         # figure out which years the module is running in
         list_of_running_academic_years = [module_academic_year]
         start_year = int(module_academic_year[:4])
-        for repeat_index in range(4):
+        for repeat_index in range(20):
             if module_is_alternating:
                 new_academic_year = str(start_year + 2*repeat_index) + '/' + str(start_year + 2*repeat_index + 1)
             else:
