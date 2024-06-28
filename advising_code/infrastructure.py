@@ -145,7 +145,7 @@ def parse_excel_form(filename):
     honours_module_choices = pd.DataFrame(module_table, columns = ['Honours year', 'Academic year', 'Semester', 'Module code'])
     
     this_student.update_honours_module_choices(honours_module_choices)
-    print(this_student.honours_module_choices)
+    # print(this_student.honours_module_choices)
 
     # return the student
     return this_student
