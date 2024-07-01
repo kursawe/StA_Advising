@@ -32,14 +32,6 @@ def find_timetable_clashes(student):
             timeslot_dictionary = dict()
             for module in semester_modules:
                 these_timeslots = get_timeslots_for_module(module)
-                if module == 'MT4005':
-                    this_academic_year = student.honours_module_choices[student.honours_module_choices['Module code'] == module]['Academic year'].values[0]
-                    if this_academic_year in ['2024/2025', '2026/2027','2028/2029']:
-                        these_timeslots = ['9am Mon (odd weeks)', '9am Wed', '9am Fri']
-                if module == 'MT4614':
-                    this_academic_year = student.honours_module_choices[student.honours_module_choices['Module code'] == module]['Academic year'].values[0]
-                    if this_academic_year == '2023/2024':
-                        these_timeslots = ['10am Mon (even weeks)', '10am Tue', '10am Thu']
                 timeslot_dictionary[module] = these_timeslots
             
             timetable_clashes_list += find_clashing_timeslots_and_modules(timeslot_dictionary, honours_year, semester)
