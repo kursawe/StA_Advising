@@ -724,9 +724,11 @@ takes a total of 120 credits per year and that the student takes at least 90 cre
             list_of_adviser_recommendations.append('This is a joint honours programme and the adviser needs to manually check that the student \
 takes a total of 120 credits per year and that the student takes at least 120 credits at 5000 level')
 
-    ## BSC COMPUTER SCIENCE AND STATISTICS REQUIREMENTS
+    ## Joint honours programms with statistics
     elif ( student.programme_name == 'Bachelor of Science (Honours) Computer Science and Statistics' or
            student.programme_name == 'Bachelor of Science (Honours) Psychology and Statistics' or 
+           student.programme_name == 'Bachelor of Science (Honours) Economics and Statistics' or 
+           student.programme_name == 'Master of Arts (Honours) Economics and Statistics' or 
            student.programme_name == 'Bachelor of Science (Honours) Management Science and Statistics'):
 
         list_of_MT350X_modules = ['MT3501', 'MT3502', 'MT3503', 'MT3504', 'MT3505', 'MT3506', 'MT3507', 'MT3508']
@@ -802,10 +804,14 @@ takes a total of 120 credits per year and that they take at least 90 credits at 
                                     'Bachelor of Science (Honours) Chemistry and Mathematics',
                                     'Bachelor of Science (Honours) Mathematics and Psychology (BPS Recognition Route)',
                                     'Bachelor of Science (Honours) Mathematics and Psychology',
+                                    'Master of Arts (Honours) Mathematics and Psychology',
                                     'Master of Arts (Honours) English and Mathematics',
                                     'Bachelor of Science (Honours) Mathematics and Philosophy',
+                                    'Master of Arts (Honours) Mathematics and Russian',
                                     'Bachelor of Science (Honours) Economics and Mathematics',
+                                    'Bachelor of Science (Honours) Geography and Mathematics',
                                     'Bachelor of Science (Honours) Financial Economics and Mathematics',
+                                    'Master of Arts (Honours) Financial Economics and Mathematics',
                                     'Master of Arts (Honours) Art History and Mathematics',
                                     'Master of Arts (Honours) Mathematics and Medieval History',
                                     'Bachelor of Science (Honours) Biology and Mathematics',
