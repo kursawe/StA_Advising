@@ -7,7 +7,7 @@ import docx
 import numbers
 
 
-module_catalogue_location = os.path.join(os.path.dirname(__file__),'..','module_catalogue','Module_catalogue.xlsx') 
+module_catalogue_location = os.path.join(os.path.dirname(__file__),'Module_catalogue.xlsx') 
 module_catalogue = pd.read_excel(module_catalogue_location)
 
 def process_form_file_or_student_id(argument):
@@ -345,18 +345,32 @@ def get_all_mms_data_bases():
         each entry of the list is one pandas data frame from a .csv file found in the student_data folder.
     '''
     # Now that we have the student ID we can look up the student in the database:
-    current_directory = os.path.dirname(os.path.abspath(__file__))
-    potential_data_files = os.listdir(os.path.join(current_directory,'..', 'student_data'))
+    current_file_directory = os.path.dirname(os.path.abspath(__file__))
+
+    # Find the data directory; this should be at ../../student_data (if running advising_tool.py)
+    # or at the CWD[/student_data] if using as a library
+    path_if_tool = os.path.join(current_file_directory, '../..', 'student_data')
+    path_if_cwd = os.path.join(os.getcwd(), "student_data")
+
+    if os.path.exists(path_if_tool):
+        data_directory = path_if_tool
+    elif os.path.exists(os.path.join(os.getcwd(), "student_data")):
+        data_directory = path_if_cwd
+    else:
+        data_directory = os.getcwd()
+    potential_data_files = os.listdir(data_directory)
     data_files = []
     for candidate_filename in potential_data_files:
        this_filename, file_extension = os.path.splitext(candidate_filename)
        if file_extension == '.csv':
            data_files.append(candidate_filename)
+    if len(data_files) == 0:
+        raise FileNotFoundError("missing student data .csv file")
     
     # turn them all into data base files
     data_bases = []
     for data_file_name in data_files:
-        data_path = os.path.join(current_directory,'..', 'student_data', data_file_name)
+        data_path = os.path.join(data_directory, data_file_name)
         this_data_frame = pd.read_csv(data_path)
         data_bases.append(this_data_frame)
     

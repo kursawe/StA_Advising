@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "StAdvising"
+version = "0.1"
+dependencies = [
+  "docx",
+  "openpyxl",
+  "pandas",
+  "termcolor"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+advising = ["*.xlsx"]
