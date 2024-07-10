@@ -293,7 +293,7 @@ def collect_student_data(student_id, include_credits = True):
         first_honours_year = data_of_honours_module_years.min()
         current_honours_year = current_calendar_year - first_honours_year + 1
         leave_of_absence_years_honours = 0
-        for year in range(first_honours_year, current_calendar_year+1):
+        for year in range(first_honours_year, current_calendar_year):
             if year not in data_of_module_years.to_list():
                 leave_of_absence_years_honours +=1
         current_honours_year -= leave_of_absence_years_honours
@@ -372,9 +372,19 @@ def get_all_mms_data_bases():
     for data_file_name in data_files:
         data_path = os.path.join(data_directory, data_file_name)
         this_data_frame = pd.read_csv(data_path)
-        data_bases.append(this_data_frame)
-    
+        this_data_frame = this_data_frame.map(strip_excel_formatting)
+        data_bases.append(this_data_frame.astype({"Student ID": "int64",
+                                                  "Credits": "float64"}))
+
     return data_bases
+
+# Some data files come with data in the form `="..."`; strip this if it exists
+def strip_excel_formatting(cell_data):
+    if isinstance(cell_data, str):
+        if cell_data[:2] == '="' and cell_data[-1] == '"':
+            return cell_data[2:-1]
+    return cell_data
+
 
 def reduce_official_data_base(data_frame, current_honours_year, include_credits = True):
     '''take a table from the official data base and reduce it to a smaller pandas data frame that only has entries that
