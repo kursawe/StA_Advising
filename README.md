@@ -94,4 +94,5 @@ For anyone interested, this is a quick explanation of the file struture
 - `src/advising/programme_requirements.py`: This file contains the code that checks programme requirements.
 - `src/advising/prerequisites.py`: This file contains the code that works out whether a student meets the prerequisites for selected modules.
 - `src/advising/timetabling.py`: This file contains the code that checks for timetable clashes, and whether modules are running as selected.
+- `src/advising/Module_catalogue.xlsx`: This file contains the data for modules, their timetabling, and their pre/anti-requisites.
 - `pyproject.toml`: This file defines how the advising code should be installed (e.g. via `pip install .`)
