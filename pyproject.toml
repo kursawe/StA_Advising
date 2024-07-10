@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "StAdvising"
 version = "0.1"
 dependencies = [
-  "docx",
+  "python-docx",
   "openpyxl",
   "pandas>=2.1.0",
   "termcolor"
