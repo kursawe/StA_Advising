@@ -1,3 +1,5 @@
+import pandas as pd
+
 class Student():
     def __init__(self, 
                  student_id, 
@@ -95,7 +97,7 @@ class Student():
             The honours module codes that the studen thas selected. The data frame current contains
             the following columns ['Honours year', 'Academic year', 'Semester', 'Module code']
         '''
-        self.honours_module_choices = self.honours_module_choices.append(additional_honours_module_choices)
+        self.honours_module_choices = pd.concat([self.honours_module_choices, additional_honours_module_choices])
         self.full_module_list += additional_honours_module_choices['Module code'].to_list()
         self.all_honours_modules += additional_honours_module_choices['Module code'].tolist()
         self.planned_honours_modules += additional_honours_module_choices['Module code'].tolist()

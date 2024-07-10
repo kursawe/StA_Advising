@@ -56,7 +56,7 @@ https://www.st-andrews.ac.uk/studentrecords/
 
 then click on 'Show extra search options'. This will open up new options to select catagories for students whose files we would like to access. In the section 'taking module' select 'MT2* modules'. Then, under 'and I want the results as' select 'a CSV file of academic data' in 'standard' format.
 This should look something like this:
-![](./advising_code/repository_image.png)
+![](./img/repository_image.png)
 
 Click the 'Search' button and save the generated file in the subfolder `student_data`, which is part of the repository file structure. Repeat the process three times by selecting 'MT3* modules', 'MT4* modules' and also 'MT5* modules'.
 
@@ -87,10 +87,12 @@ Finally, every tool gets better the more collaborators are looking over the code
 # File structure
 For anyone interested, this is a quick explanation of the file struture
 
-- `advising_tool.py`: This file does the command line parsing and calls the actual code in the  `advising_code` folder.
-- `advising_code/__init__.py`: This file is part of how python works, and allows us to load the code from all other files in the folder into the main namespace whenever `advising_code` gets imported from within python.
-- `advising_code/student.py`: This file defines the main datastructure that we are using inside our checks, the 'Student' class. This is a python class which allows us to curate all information about a student in one object, thus allowing us quick access to which modules have been taken, which modules the student planning to take, which year they are in, etc.
-- `advising_code/infrastructure.py`: This file contains the code to read and write files, and multiple helper functions that we use when checking programme requirements and timetable clashes etc.
-- `advising_code/programme_requirements.py`: This file contains the code that checks programme requirements.
-- `advising_code/prerequisites.py`: This file contains the code that works out whether a student meets the prerequisites for selected modules.
-- `advising_code/timetabling.py`: This file contains the code that checks for timetable clashes, and whether modules are running as selected.
+- `advising_tool.py`: This file does the command line parsing and calls the actual code in the  `src/advising` folder.
+- `src/advising/__init__.py`: This file is part of how python works, and allows us to load the code from all other files in the folder into the main namespace whenever `src/advising` gets imported from within python.
+- `src/advising/student.py`: This file defines the main datastructure that we are using inside our checks, the 'Student' class. This is a python class which allows us to curate all information about a student in one object, thus allowing us quick access to which modules have been taken, which modules the student planning to take, which year they are in, etc.
+- `src/advising/infrastructure.py`: This file contains the code to read and write files, and multiple helper functions that we use when checking programme requirements and timetable clashes etc.
+- `src/advising/programme_requirements.py`: This file contains the code that checks programme requirements.
+- `src/advising/prerequisites.py`: This file contains the code that works out whether a student meets the prerequisites for selected modules.
+- `src/advising/timetabling.py`: This file contains the code that checks for timetable clashes, and whether modules are running as selected.
+- `src/advising/Module_catalogue.xlsx`: This file contains the data for modules, their timetabling, and their pre/anti-requisites.
+- `pyproject.toml`: This file defines how the advising code should be installed (e.g. via `pip install .`)

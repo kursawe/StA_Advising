@@ -1,4 +1,4 @@
-from advising_code import *
+from src.advising import *
 import argparse
 import os
 
