@@ -1060,7 +1060,7 @@ def check_for_120_credits_each_year(student):
             semester_1_modules = this_reduced_data_base[this_reduced_data_base['Semester'] == 'S1']['Module code']
             semester_2_modules = this_reduced_data_base[this_reduced_data_base['Semester'] == 'S2']['Module code']
             if len(semester_1_modules) != 4 or len(semester_2_modules) != 3:
-                list_of_adviser_recommendations.append('Student is taking a high course load in second semester of final honours year (which may make the final year project completion difficult)')
+                list_of_adviser_recommendations.append('Student is taking a high course load in second semester of final honours year so should ensure the majority of their project is completed before the start of S2')
         elif honours_year == 'Year 3':
             this_reduced_data_base = this_data_base[this_data_base['Module code'] != 'MT5599']
             semester_1_modules = this_reduced_data_base[this_reduced_data_base['Semester'] == 'S1']['Module code']
