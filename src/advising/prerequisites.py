@@ -97,7 +97,7 @@ def get_missing_prerequisites_for_module(module, student):
         prerequisites = float('nan')
 
     # if the prerequsites are not empty
-    if  isinstance(prerequisites,str) and module!='MT5867' and module !='MT5846':
+    if  isinstance(prerequisites,str) and module!='MT5867':
         prerequisite_list = prerequisites.split()
         # if there is only one prerequisite we can easily parse that
         if len(prerequisite_list) == 1:
@@ -155,14 +155,6 @@ def get_missing_prerequisites_for_module(module, student):
         if number_of_matching_modules <2:
             missed_prerequisites_list.append('Student is missing prerequisite [' + prerequisites + '] for module MT5867')
     
-    if module == 'MT5846':
-        has_taken_MT4112_this_year = 'MT4112' not in student.passed_modules and 'MT4112' in previously_taken_modules
-        if not has_taken_MT4112_this_year:
-            if not 'MT4112' in student.passed_modules:
-                missed_prerequisites_list.append('Student is missing prerequisite MT4112 for module MT5846')
-            elif not 'MT3802' in student.passed_modules:
-                missed_prerequisites_list.append('Student is missing prerequisite MT4112 and MT3508 for module MT5846')
-            
     # now check anti-requisites:
     # to do so, get the anti-requisites
     if len(module_catalogue[module_catalogue['Module code'] == module])> 0:
