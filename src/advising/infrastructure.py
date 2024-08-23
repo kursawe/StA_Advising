@@ -209,7 +209,7 @@ def collect_student_data(student_id, include_credits = True):
                                                                                                    & (student_data_base['Assessment grade'] > 3.5) ) | 
                                                     ( ( (student_data_base['Assessment result']=='S')|(student_data_base['Assessment result']=='SP') ) & 
                                                       ( (~pd.isnull(student_data_base['Assessment grade']) & (student_data_base['Assessment grade'] > 7.0) ) |
-                                                          (pd.isnull(student_data_base['Reassessment result']))) )]
+                                                          (pd.isnull(student_data_base['Reassessment result']))) )].copy()
     data_base_of_passed_modules.drop_duplicates(subset='Module code', keep='last', inplace=True)
     passed_modules = data_base_of_passed_modules['Module code'].to_list()
     passed_modules = passed_modules
