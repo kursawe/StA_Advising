@@ -243,6 +243,9 @@ def find_not_running_modules(student):
             not_running_modules_list.append('Selected module ' + planned_module_code + ' is not running in academic year ' +
                                             str(planned_academic_year))
 
+    if 'MT45AB' in student.planned_honours_modules or 'MT45ML' in student.planned_honours_modules:
+        adviser_recommendations_list.append('Student is planning to take MT45AB or MT45ML - these will be new modules and their timetabling and prerequisites may change')
+
     # merge all found problems into a string
     not_running_modules = merge_list_to_long_string(not_running_modules_list)
     adviser_recommendations = merge_list_to_long_string(adviser_recommendations_list)
