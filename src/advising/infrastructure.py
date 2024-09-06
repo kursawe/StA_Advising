@@ -145,7 +145,6 @@ def parse_excel_form(filename):
     honours_module_choices = pd.DataFrame(module_table, columns = ['Honours year', 'Academic year', 'Semester', 'Module code'])
     
     this_student.update_honours_module_choices(honours_module_choices)
-    # print(this_student.honours_module_choices)
 
     # return the student
     return this_student
@@ -186,7 +185,9 @@ def collect_student_data(student_id, include_credits = True):
         return 'contains invalid student ID ' + str(student_id)
 
     # infer the year of study from the earliest module taken
-    data_of_module_years = student_data_base['Year'].str.slice(0,4).astype('int')
+    past_student_data_base = student_data_base.loc[student_data_base['Assessment result'].notna()]
+
+    data_of_module_years = past_student_data_base['Year'].str.slice(0,4).astype('int')
     earliest_year = data_of_module_years.min()
     current_calendar_year = data_of_module_years.max()+1
     
@@ -306,7 +307,6 @@ def collect_student_data(student_id, include_credits = True):
             passed_modules_this_hear = data_base_of_passed_modules_this_year['Module code'].to_list()
             passed_honours_modules += passed_modules_this_hear
 
-
     passed_module_table = reduce_official_data_base(data_base_of_passed_modules, current_honours_year) 
 
     data_base_of_planned_modules = student_data_base[(pd.isna(student_data_base['Assessment result']))]
@@ -406,8 +406,17 @@ def reduce_official_data_base(data_frame, current_honours_year, include_credits 
         will only contains essential module information
     '''
     module_table = []
-    data_of_module_years = data_frame['Year'].str.slice(0,4).astype('int')
-    most_recent_year = data_of_module_years.max() +1
+    past_data_frame = data_frame.loc[data_frame['Assessment result'].notna()]
+    if not past_data_frame.empty:
+        data_of_module_years = past_data_frame['Year'].str.slice(0,4).astype('int')
+        most_recent_year = data_of_module_years.max() +1
+    else:
+        #in this case, the data frame we are given only has selected, not past modules
+        #hence, the minimal selected year must be the current actual year
+        data_of_module_years = data_frame['Year'].str.slice(0,4).astype('int')
+        most_recent_year = data_of_module_years.min()
+
+    # data_of_module_years = past_student_data_base['Year'].str.slice(0,4).astype('int')
     
     for _,row in data_frame.iterrows():
         module_code = row['Module code']
