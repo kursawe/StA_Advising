@@ -288,7 +288,8 @@ def collect_student_data(student_id, include_credits = True):
         passed_honours_modules += passed_modules_this_hear
 
     # updating first honours year if we know when the student has taken the first MT3* module 
-    data_base_of_honours_modules = student_data_base[student_data_base['Module code'].str.contains('MT3')]
+    student_data_base_with_valid_module_codes = student_data_base[student_data_base['Module code'].notna()]
+    data_base_of_honours_modules = student_data_base_with_valid_module_codes[student_data_base_with_valid_module_codes['Module code'].str.contains('MT3')]
     if not data_base_of_honours_modules.empty:
         data_of_honours_module_years = data_base_of_honours_modules['Year'].str.slice(0,4).astype('int')
         first_honours_year = data_of_honours_module_years.min()
@@ -811,7 +812,7 @@ def check_final_year_students():
                     colour_code_print_statement(student_or_warning)
                 else:
                     student= student_or_warning
-                    if student.current_honours_year >= student.expected_honours_years:
+                    if student.current_honours_year == student.expected_honours_years:
                         this_summary_data_frame = process_form_file_or_student_id(student_id)
                         list_of_summary_data_frames.append(this_summary_data_frame)
                         separation_string = '-'*60
