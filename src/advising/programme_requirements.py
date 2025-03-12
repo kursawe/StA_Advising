@@ -92,7 +92,9 @@ def find_missing_programme_requirements(student):
     
     # Check for study abroad
     student_studied_abroad = (any('J' in item for item in student.full_module_list) or 
-                              any('MTSAU' in item for item in student.full_module_list) )
+                              any('MTSAU' in item for item in student.full_module_list) or
+                              any('MT30' in item for item in student.full_module_list))
+
     if student_studied_abroad:
         list_of_missed_requirements.append('Student studied abroad and will require manual checking - flagged issues can be wrong')
     
@@ -328,7 +330,7 @@ def find_missing_programme_requirements(student):
         
         # check there are enough pure modules
         list_of_pure_modules = ['MT5821', 'MT5823', 'MT5824', 'MT5825', 'MT5826', 'MT5827', 'MT5828', 'MT5829','MT5830', 'MT5836','MT5837', 'MT5861', 'MT5862','MT5863', 'MT5864',
-                                'MT5865','MT5866', 'MT5687', 'MT5868', 'MT5869', 'MT5870', 'MT5876','MT5877', 'MT5590', 'MT5990']
+                                'MT5865','MT5866', 'MT5867', 'MT5868', 'MT5869', 'MT5870', 'MT5876','MT5877', 'MT5590', 'MT5990']
         number_of_pure_modules = student.get_number_of_modules_in_list(list_of_pure_modules)
         if number_of_pure_modules < 4:
             list_of_missed_requirements.append('Student is not taking sufficiently many pure modules')
@@ -356,8 +358,6 @@ def find_missing_programme_requirements(student):
                                                                                         or 'ID5059' in module]
 
         if len(list_of_all_MT_modules) <21:
-            print(len(list_of_all_MT_modules))
-            print(list_of_all_MT_modules)
             list_of_missed_requirements.append('Student is taking more than 2 modules as dip-down or dip-across, which is not allowed')
             
         list_of_2000_level_modules = [module for module in student.planned_honours_modules if 'MT2' in module]
@@ -680,13 +680,15 @@ takes a total of 120 credits per year and that the student takes at least 90 cre
         list_of_required_fourth_year_modules = ['MT3503', 'PH4028']
         number_of_required_fourth_year_modules = len(set.intersection(set(year_four_modules),set(list_of_required_fourth_year_modules)))
         if number_of_required_fourth_year_modules == 0:
-            list_of_missed_requirements.append('Student is not taking one of [MT3505, PH4028] in year 4')
+            list_of_missed_requirements.append('Student is not taking one of [MT3503, PH4028] in year 4')
             
         # check that there are at least 135 credits of MT modules (9 modules) across all honours years
         list_of_all_MT_modules = [module for module in student.all_honours_modules if 'MT2' in module 
                                                                                    or 'MT3' in module 
                                                                                    or 'MT4' in module
-                                                                                   or 'MT5' in module]
+                                                                                   or 'MT5' in module
+                                                                                   or 'ID5059' in module]
+
         if len(list_of_all_MT_modules) < 9 and 'MT5599' not in student.all_honours_modules:
             list_of_missed_requirements.append('Student planning less then 135 credits (9 modules) in MT modules')
         elif len(list_of_all_MT_modules) < 8 and 'MT5599' in student.all_honours_modules:
@@ -739,7 +741,6 @@ takes a total of 120 credits per year and that the student takes at least 120 cr
         list_of_stats_modules_1 = ['MT4531','MT4606']
         number_of_stats_modules_1 = student.get_number_of_modules_in_list(list_of_stats_modules_1)
         if number_of_stats_modules_1 == 0:
-            print('I am here for some reason')
             list_of_missed_requirements.append('Student not taking a module in [MT4531,MT4606]')
 
         list_of_stats_modules_2 = ['MT4113', 'MT4527', 'MT4528', 'MT4530', 'MT4537', 'MT4539', 'MT4607', 'MT4608', 'MT4609', 'MT4614']
@@ -1049,7 +1050,9 @@ def check_for_120_credits_each_year(student):
     
     #checking moduel splits
     for honours_year in honours_years:
-        this_data_base = student.honours_module_choices[student.honours_module_choices['Honours year'] == honours_year]
+        this_planned_data_base = student.honours_module_choices[student.honours_module_choices['Honours year'] == honours_year]
+        this_passed_data_base = student.passed_module_table[student.passed_module_table['Honours year'] == honours_year]
+        this_data_base = pd.concat([this_planned_data_base, this_passed_data_base], ignore_index=True) 
         if honours_year == 'Year 1' or (honours_year == 'Year 2' and student.expected_honours_years == 3):
             for semester in ['S1', 'S2']:
                 this_smaller_data_base = this_data_base[this_data_base['Semester'] == semester]

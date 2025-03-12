@@ -185,11 +185,17 @@ def collect_student_data(student_id, include_credits = True):
         return 'contains invalid student ID ' + str(student_id)
 
     # infer the year of study from the earliest module taken
-    past_student_data_base = student_data_base.loc[student_data_base['Assessment result'].notna()]
+    past_student_data_base = student_data_base.loc[(student_data_base['Assessment result'].notna()) &
+                                                   (student_data_base['Semester'] == 'S2')]
 
     data_of_module_years = past_student_data_base['Year'].str.slice(0,4).astype('int')
-    earliest_year = data_of_module_years.min()
-    current_calendar_year = data_of_module_years.max()+1
+    
+    if not pd.isna(data_of_module_years.min()):
+        earliest_year = data_of_module_years.min()
+        current_calendar_year = data_of_module_years.max()+1
+    else:
+        earliest_year = 2024
+        current_calendar_year = 2024
     
     leave_of_absence_years = 0
     for year in range(earliest_year, current_calendar_year):
@@ -284,9 +290,9 @@ def collect_student_data(student_id, include_credits = True):
         year_number = current_calendar_year-year_difference
         calendar_year_string = str(year_number) + '/' + str(year_number + 1)
         data_base_of_passed_modules_this_year = data_base_of_passed_modules[data_base_of_passed_modules['Year']==calendar_year_string]
-        passed_modules_this_hear = data_base_of_passed_modules_this_year['Module code'].to_list()
-        passed_honours_modules += passed_modules_this_hear
-
+        passed_modules_this_year = data_base_of_passed_modules_this_year['Module code'].to_list()
+        passed_honours_modules += passed_modules_this_year
+        
     # updating first honours year if we know when the student has taken the first MT3* module 
     student_data_base_with_valid_module_codes = student_data_base[student_data_base['Module code'].notna()]
     data_base_of_honours_modules = student_data_base_with_valid_module_codes[student_data_base_with_valid_module_codes['Module code'].str.contains('MT3')]
@@ -309,7 +315,7 @@ def collect_student_data(student_id, include_credits = True):
             passed_honours_modules += passed_modules_this_hear
 
     passed_module_table = reduce_official_data_base(data_base_of_passed_modules, current_honours_year) 
-
+    
     data_base_of_planned_modules = student_data_base[(pd.isna(student_data_base['Assessment result']))]
     honours_module_choices = reduce_official_data_base(data_base_of_planned_modules, current_honours_year)
     
@@ -407,7 +413,9 @@ def reduce_official_data_base(data_frame, current_honours_year, include_credits 
         will only contains essential module information
     '''
     module_table = []
-    past_data_frame = data_frame.loc[data_frame['Assessment result'].notna()]
+    past_data_frame = data_frame.loc[(data_frame['Assessment result'].notna()) &
+                                     (data_frame['Semester'] == 'S2')]
+
     if not past_data_frame.empty:
         data_of_module_years = past_data_frame['Year'].str.slice(0,4).astype('int')
         most_recent_year = data_of_module_years.max() +1
@@ -442,7 +450,7 @@ def reduce_official_data_base(data_frame, current_honours_year, include_credits 
     else:
         reduced_data_frame = pd.DataFrame(module_table, 
                                            columns = ['Honours year', 'Academic year', 'Semester', 'Module code'])
-    
+
     return reduced_data_frame
 
 def generate_summary_data_frame_from_entries(data_list):
