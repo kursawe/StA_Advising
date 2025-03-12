@@ -46,12 +46,20 @@ def find_missing_programme_requirements(student):
     if len(set(student.full_module_list)) != len(student.full_module_list):
         double_entry_counter = collections.Counter(student.full_module_list)
         duplicate_entries = [module for module, count in double_entry_counter.items() if count > 1]
-        warning_string = 'Student selected the following modules twice: '
+        # ignore duplicate entries if student is retaking a failed module
+        filtered_duplicate_entries = []
         for entry in duplicate_entries:
-            warning_string += entry
-            if entry != duplicate_entries[-1]:
-                warning_string += ', '
-        list_of_missed_requirements.append(warning_string)
+            if (entry in student.modules_awaiting_reassessment) and (entry in student.planned_honours_modules):
+                pass
+            else:
+                filtered_duplicate_entries.append(entry)
+        if len(filtered_duplicate_entries) > 0:
+            warning_string = 'Student selected the following modules twice: '
+            for entry in duplicate_entries:
+                warning_string += entry
+                if entry != duplicate_entries[-1]:
+                    warning_string += ', '
+            list_of_missed_requirements.append(warning_string)
         
     # flag up z-coded and deferred modules
     if len(student.z_coded_modules) > 0:
