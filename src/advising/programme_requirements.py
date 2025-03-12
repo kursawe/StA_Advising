@@ -218,11 +218,13 @@ def find_missing_programme_requirements(student):
                 list_of_missed_requirements.append('Student is not taking their final year project in their final year.')
         
         # check dip-down and dip-across: no more than two modules should be outside of MT3X to MT5X
-        list_of_all_non_honours_modules = [module for module in student.all_honours_modules if 'MT3' not in module 
-                                                                                        and 'MT4' not in module 
-                                                                                        and 'MT5' not in module
-                                                                                        and 'ID5059' not in module]
-        if len(list_of_all_non_honours_modules) >2:
+        list_of_all_MT_modules = [module for module in student.all_honours_modules if 'MT3' in module 
+                                                                                        or 'MT4' in module 
+                                                                                        or 'MT5' in module
+                                                                                        or 'ID4001' in module
+                                                                                        or 'ID5059' in module]
+
+        if len(list_of_all_MT_modules) <21:
             list_of_missed_requirements.append('Student is taking more than 2 modules as dip-down or dip-across, which is not allowed')
 
         # check that there are at least 120 credits (7 modules) at 5000 level
