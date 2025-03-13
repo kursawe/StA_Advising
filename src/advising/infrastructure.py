@@ -833,7 +833,7 @@ def check_final_year_students():
                     colour_code_print_statement(student_or_warning)
                 else:
                     student= student_or_warning
-                    if student.current_honours_year == student.expected_honours_years:
+                    if student.current_honours_year >= student.expected_honours_years:
                         this_summary_data_frame = process_form_file_or_student_id(student_id)
                         list_of_summary_data_frames.append(this_summary_data_frame)
                         separation_string = '-'*60
@@ -843,7 +843,9 @@ def check_final_year_students():
 
     summary_data_frame = pd.concat(list_of_summary_data_frames, ignore_index=True)
 
-    summary_data_frame = summary_data_frame.sort_values(by='Student ID')
+    summary_data_frame_sorted = summary_data_frame.sort_values(by='Student ID')
+    
+    summary_data_frame = summary_data_frame_sorted[~summary_data_frame_sorted['Unmet programme requirements'].str.contains("No programme requirements available", na=False)]
 
     return summary_data_frame
 
