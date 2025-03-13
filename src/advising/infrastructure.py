@@ -193,7 +193,7 @@ def collect_student_data(student_id, include_credits = True):
     data_of_module_years = past_student_data_base['Year'].str.slice(0,4).astype('int')
     
     today = date.today()
-    if today.month < 5:
+    if today.month < 3:
         current_calendar_year = today.year - 1
     else:
         current_calendar_year = today.year

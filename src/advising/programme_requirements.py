@@ -402,8 +402,10 @@ def find_missing_programme_requirements(student):
         if number_of_selective_modules_one < 1:
             list_of_missed_requirements.append('Student is not taking a module out of [MT4531, MT5731]')
             
-        list_of_stats_modules = ['MT4527', 'MT4528', 'MT4530', 'MT4537', 'MT4539', 'MT4607', 'MT4608', 'MT4609', 'MT4614']
-        number_of_stats_modules = student.get_number_of_modules_in_list(list_of_stats_modules)
+        list_of_specific_stats_modules = ['MT4527', 'MT4528', 'MT4530', 'MT4537', 'MT4539', 'MT4607', 'MT4608', 'MT4609', 'MT4614']
+        number_of_specific_stats_modules = student.get_number_of_modules_in_list(list_of_specific_stats_modules)
+        number_in_stats_range = sum(module.startswith("MT457") for module in student.full_module_list)
+        number_of_stats_modules = number_of_specific_stats_modules + number_in_stats_range
         if number_of_stats_modules < 2:
             list_of_missed_requirements.append('Student is only taking ' + str(number_of_stats_modules) + ' instead of 2 out of [MT4527, MT4528, MT4530, MT4537, MT4539, MT4607, MT4608, MT4609, MT4614]')
 
@@ -469,8 +471,10 @@ def find_missing_programme_requirements(student):
             list_of_missed_requirements.append('Student is not taking a computing module')
         
         # check there are enough statistics modules
-        list_of_statistics_modules = ['MT4527', 'MT4528', 'MT4530', 'MT4537', 'MT4539', 'MT4607', 'MT4608', 'MT4609', 'MT4614']
-        number_of_statistics_modules = student.get_number_of_modules_in_list(list_of_statistics_modules)
+        list_of_specific_stats_modules = ['MT4527', 'MT4528', 'MT4530', 'MT4537', 'MT4539', 'MT4607', 'MT4608', 'MT4609', 'MT4614']
+        number_of_specific_stats_modules = student.get_number_of_modules_in_list(list_of_specific_stats_modules)
+        number_in_stats_range = sum(module.startswith("MT457") for module in student.full_module_list)
+        number_of_statistics_modules = number_of_specific_stats_modules + number_in_stats_range
         if number_of_statistics_modules < 2:
             list_of_missed_requirements.append('Student is not taking sufficiently many statistics modules')
       
@@ -754,7 +758,9 @@ takes a total of 120 credits per year and that the student takes at least 120 cr
             list_of_missed_requirements.append('Student not taking a module in [MT4531,MT4606]')
 
         list_of_stats_modules_2 = ['MT4113', 'MT4527', 'MT4528', 'MT4530', 'MT4537', 'MT4539', 'MT4607', 'MT4608', 'MT4609', 'MT4614']
-        number_of_stats_modules_2 = student.get_number_of_modules_in_list(list_of_stats_modules_2)
+        number_of_specific_stats_modules = student.get_number_of_modules_in_list(list_of_stats_modules_2)
+        number_in_stats_range = sum(module.startswith("MT457") for module in student.full_module_list)
+        number_of_stats_modules_2 = number_of_specific_stats_modules + number_in_stats_range
         if number_of_stats_modules_2 == 0:
             list_of_missed_requirements.append('Student not taking a module in [MT4113, MT4527, MT4528, MT4530, MT4537, MT4539, MT4607, MT4608, MT4609, MT4614]')
 
