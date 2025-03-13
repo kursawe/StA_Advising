@@ -5,6 +5,7 @@ import termcolor
 from .student import *
 import docx
 import numbers
+from datetime import date
 
 
 module_catalogue_location = os.path.join(os.path.dirname(__file__),'Module_catalogue.xlsx') 
@@ -186,16 +187,24 @@ def collect_student_data(student_id, include_credits = True):
 
     # infer the year of study from the earliest module taken
     past_student_data_base = student_data_base.loc[(student_data_base['Assessment result'].notna()) &
-                                                   (student_data_base['Semester'] == 'S2')]
+                                                   (student_data_base['Assessment result'] != 'V') ] 
+                                                #    (student_data_base['Semester'] == 'S2')]
 
     data_of_module_years = past_student_data_base['Year'].str.slice(0,4).astype('int')
     
+    today = date.today()
+    if today.month < 5:
+        current_calendar_year = today.year - 1
+    else:
+        current_calendar_year = today.year
+
     if not pd.isna(data_of_module_years.min()):
         earliest_year = data_of_module_years.min()
-        current_calendar_year = data_of_module_years.max()+1
+        # current_calendar_year = data_of_module_years.max()+1
     else:
-        earliest_year = 2024
-        current_calendar_year = 2024
+        earliest_year = current_calendar_year
+        # earliest_year = 2024
+        # current_calendar_year = 2024
     
     leave_of_absence_years = 0
     for year in range(earliest_year, current_calendar_year):
@@ -282,7 +291,7 @@ def collect_student_data(student_id, include_credits = True):
         
     no_subhonours_years = no_of_programme_years - expected_honours_years
     current_honours_year = year_of_study - no_subhonours_years
-   
+    
     # make a separate data base of passed honours modules
     passed_honours_modules = list()
     for previous_honours_year in range(1,current_honours_year+1):
@@ -314,10 +323,10 @@ def collect_student_data(student_id, include_credits = True):
             passed_modules_this_hear = data_base_of_passed_modules_this_year['Module code'].to_list()
             passed_honours_modules += passed_modules_this_hear
 
-    passed_module_table = reduce_official_data_base(data_base_of_passed_modules, current_honours_year) 
+    passed_module_table = reduce_official_data_base(data_base_of_passed_modules, current_honours_year, current_calendar_year) 
     
     data_base_of_planned_modules = student_data_base[(pd.isna(student_data_base['Assessment result']))]
-    honours_module_choices = reduce_official_data_base(data_base_of_planned_modules, current_honours_year)
+    honours_module_choices = reduce_official_data_base(data_base_of_planned_modules, current_honours_year, current_calendar_year)
     
     # finish processing forms
 
@@ -393,7 +402,7 @@ def strip_excel_formatting(cell_data):
     return cell_data
 
 
-def reduce_official_data_base(data_frame, current_honours_year, include_credits = True):
+def reduce_official_data_base(data_frame, current_honours_year, current_calendar_year, include_credits = True):
     '''take a table from the official data base and reduce it to a smaller pandas data frame that only has entries that
     we care about.
     
@@ -406,6 +415,9 @@ def reduce_official_data_base(data_frame, current_honours_year, include_credits 
     current_honours_year : int
         the current honours year of the student being processed
         
+    current_honours_year : int
+        the current calendar year
+
     Returns :
     ---------
     
@@ -413,17 +425,18 @@ def reduce_official_data_base(data_frame, current_honours_year, include_credits 
         will only contains essential module information
     '''
     module_table = []
-    past_data_frame = data_frame.loc[(data_frame['Assessment result'].notna()) &
-                                     (data_frame['Semester'] == 'S2')]
+    # past_data_frame = data_frame.loc[(data_frame['Assessment result'].notna()) &
+                                    #  (data_frame['Semester'] == 'S2')]
 
-    if not past_data_frame.empty:
-        data_of_module_years = past_data_frame['Year'].str.slice(0,4).astype('int')
-        most_recent_year = data_of_module_years.max() +1
-    else:
+    # if not past_data_frame.empty:
+        # data_of_module_years = past_data_frame['Year'].str.slice(0,4).astype('int')
+        # most_recent_year = data_of_module_years.max() +1
+    # else:
         #in this case, the data frame we are given only has selected, not past modules
         #hence, the minimal selected year must be the current actual year
-        data_of_module_years = data_frame['Year'].str.slice(0,4).astype('int')
-        most_recent_year = data_of_module_years.min()
+        # data_of_module_years = data_frame['Year'].str.slice(0,4).astype('int')
+        # most_recent_year = data_of_module_years.min()
+    most_recent_year = current_calendar_year
 
     # data_of_module_years = past_student_data_base['Year'].str.slice(0,4).astype('int')
     
