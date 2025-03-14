@@ -11,7 +11,7 @@ from datetime import date
 module_catalogue_location = os.path.join(os.path.dirname(__file__),'Module_catalogue.xlsx') 
 module_catalogue = pd.read_excel(module_catalogue_location)
 
-def process_form_file_or_student_id(argument):
+def process_form_file_or_student_id(argument, programme_name = None):
     """preforms all advising checks on the 
     submitted form.
     
@@ -22,6 +22,9 @@ def process_form_file_or_student_id(argument):
         if it's a string: path to the file that is being investigated,
         i.e. a filled-in module choice form
         if it's an integer: a valid student ID
+        
+    programme_name : string
+        if this is not none than the programme requirements for this programme will be checked.
     """ 
     if isinstance(argument, str):
         student_or_warning = parse_excel_form(argument)
@@ -51,6 +54,8 @@ def process_form_file_or_student_id(argument):
         return summary_data_frame
     
     student = student_or_warning
+    if programme_name is not None:
+        student.programme_name = programme_name
     print('Processing file or student')
     print(str(argument))
     print(' ')
