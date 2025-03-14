@@ -155,6 +155,10 @@ def get_missing_prerequisites_for_module(module, student):
         if number_of_matching_modules <2:
             missed_prerequisites_list.append('Student is missing prerequisite [' + prerequisites + '] for module MT5867')
     
+    if module == 'ID4001':
+        adviser_recommendations_list.append('Module ID4001 requires application and interview in the previous semester.')
+        
+    
     # now check anti-requisites:
     # to do so, get the anti-requisites
     if len(module_catalogue[module_catalogue['Module code'] == module])> 0:
