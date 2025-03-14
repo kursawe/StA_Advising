@@ -538,7 +538,7 @@ def merge_list_to_long_string(a_list):
     for item in a_list:
         if item != 'None':
             if first_item_found:
-                a_string += ', ' + item
+                a_string += '\n' + item
             else:
                 a_string = item
                 first_item_found = True
@@ -657,50 +657,7 @@ def save_summary_data_frame(data_frame, filename):
         else:
             filename += '.xlsx'
         
-    styled_data_frame = (data_frame.style.apply(colour_code_passes, subset = ['Unmet programme requirements', 'Missing prerequisites', 'Modules not running',
-                                                                                       'Timetable clashes'], axis = 0).
-                          apply(colour_recommendations, subset = ['Adviser recommendations'], axis = 0))
-
-    writer = pd.ExcelWriter(filename) 
-    # Manually adjust the width of each column
-    styled_data_frame.to_excel(writer)
-    worksheet = writer.sheets['Sheet1']
-    font = openpyxl.styles.Font(size=14)
-    worksheet.set_column(0,0,width=5)
-    worksheet.set_column(1,1,width=12)
-    worksheet.set_column(2,2,width=22)
-    worksheet.set_column(3,3,width=35)
-    worksheet.set_column(4,4,width=8)
-    worksheet.set_column(5,5,width=40)
-    worksheet.set_column(6,6,width=40)
-    worksheet.set_column(7,7,width=40)
-    worksheet.set_column(8,8,width=40)
-    worksheet.set_column(9,9,width=40)
-    
-    # The only way I found to change the font size is to save the excel file, reload it, and then edit the fontsize, and save it again
-    writer.close()
-    
-    # reload
-    reloaded_workbook = openpyxl.load_workbook(filename)
-
-    # Access the active sheet
-    worksheet = reloaded_workbook.active
-
-    # Set the font size for all cells in the worksheet
-    font_size = 14
-    font = openpyxl.styles.Font(size=font_size)
-    for row in worksheet.iter_rows():
-        for cell in row:
-            cell.font = font
-
-    # Make the first row bold
-    bold_font = openpyxl.styles.Font(size=font_size, bold=True)
-    for cell in worksheet[1]:
-        cell.font = bold_font
-    # Save the modified workbook
-    reloaded_workbook.save(filename)
-    
-    # Now let's also save into word
+    # Let's start by writing into word 
     filename_base = filename[:-5]
     word_file_name = filename_base + '.docx'
     
@@ -768,7 +725,56 @@ def save_summary_data_frame(data_frame, filename):
         run.add_break()
         
         word_document.save(word_file_name)
-   
+ 
+    text_columns = ['Unmet programme requirements', 'Missing prerequisites', 'Modules not running', 'Timetable clashes', 'Adviser recommendations']
+    data_frame[text_columns] = data_frame[text_columns].replace('\n', '; ', regex=True)
+    styled_data_frame = (data_frame.style.apply(colour_code_passes, subset = ['Unmet programme requirements', 'Missing prerequisites', 'Modules not running',
+                                                                                       'Timetable clashes'], axis = 0).
+                          apply(colour_recommendations, subset = ['Adviser recommendations'], axis = 0))
+
+
+    ## write to excel
+
+    writer = pd.ExcelWriter(filename) 
+    # Manually adjust the width of each column
+    styled_data_frame.to_excel(writer)
+    worksheet = writer.sheets['Sheet1']
+    font = openpyxl.styles.Font(size=14)
+    worksheet.set_column(0,0,width=5)
+    worksheet.set_column(1,1,width=12)
+    worksheet.set_column(2,2,width=22)
+    worksheet.set_column(3,3,width=35)
+    worksheet.set_column(4,4,width=8)
+    worksheet.set_column(5,5,width=40)
+    worksheet.set_column(6,6,width=40)
+    worksheet.set_column(7,7,width=40)
+    worksheet.set_column(8,8,width=40)
+    worksheet.set_column(9,9,width=40)
+    
+    # The only way I found to change the font size is to save the excel file, reload it, and then edit the fontsize, and save it again
+    writer.close()
+    
+    # reload
+    reloaded_workbook = openpyxl.load_workbook(filename)
+
+    # Access the active sheet
+    worksheet = reloaded_workbook.active
+
+    # Set the font size for all cells in the worksheet
+    font_size = 14
+    font = openpyxl.styles.Font(size=font_size)
+    for row in worksheet.iter_rows():
+        for cell in row:
+            cell.font = font
+
+    # Make the first row bold
+    bold_font = openpyxl.styles.Font(size=font_size, bold=True)
+    for cell in worksheet[1]:
+        cell.font = bold_font
+    # Save the modified workbook
+    reloaded_workbook.save(filename)
+    
+  
 def process_folder(folder_name):
     """Finds all student formfiles (all excel files) in a folder and performs advising checks on them
     
