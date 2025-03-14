@@ -614,7 +614,7 @@ takes a total of 120 credits per year')
             if not student_takes_3502_and_3505:
                 list_of_missed_requirements.append('Student is not taking MT3505 and MT3502 in year 3 (which is a requirement for them)')
         else:
-            list_of_missed_requirements.append('Student does not seem to have an allowed selection of subhonours MT modules')
+            list_of_missed_requirements.append('Student has not yet passed an allowed selection of subhonours MT modules')
  
         # check that there are at least 90 credits of MT modules across both honours years
         list_of_all_MT_modules = [module for module in student.all_honours_modules if 'MT3' in module 
@@ -684,7 +684,7 @@ takes a total of 120 credits per year and that the student takes at least 90 cre
             if not student_takes_3502_and_3505:
                 list_of_missed_requirements.append('Student is not taking MT3505 and MT3502 in year 3 (which is a requirement for them)')
         else:
-            list_of_missed_requirements.append('Student does not seem to have an allowed selection of subhonours MT modules')
+            list_of_missed_requirements.append('Student has not yet passed an allowed selection of subhonours MT modules')
                 
         # Check the linear mathematics part of the requirements:
         if 'MT3501' not in year_three_modules and 'MT3501' not in student.passed_modules:
