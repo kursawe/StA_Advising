@@ -10,6 +10,16 @@ python advising_tool.py form_file.xlsx
 
 If you wish to process a folder of form files, simply replace the `form_file.xlsx` with the folder name.
 
+The tool has an option to overwrite the programme of study in the student data base, so that it's possible to check module choices against different programme requirements than the current degree intention of the student. To do so, invoke the script with the additional command line option `-p`, as in
+
+```
+python advising_tool.py -p "programme name" form_file.xlsx
+```
+
+Here, the the programme name needs to exactly match one of the options listed on University of St Andrews programme requirements website:
+
+https://e-vision.st-andrews.ac.uk/cview/reqs/2024-25/list.html?v=dp
+
 The tool will save it's findings into an excel file as well as a Microsoft Word file, and also print everything to command line. The output files are `summary_file.xlsx` and `summary_file.xlsx`. You can save into different files by typing
 
 ```
