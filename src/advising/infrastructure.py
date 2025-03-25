@@ -775,7 +775,7 @@ def save_summary_data_frame(data_frame, filename):
     reloaded_workbook.save(filename)
     
   
-def process_folder(folder_name):
+def process_folder(folder_name, programme_name = None):
     """Finds all student formfiles (all excel files) in a folder and performs advising checks on them
     
     Parameters:
@@ -790,6 +790,11 @@ def process_folder(folder_name):
     summary_data_frame : pandas data frame
         Data frame with one column per student. Contains the same columns as the data frame returned
         by process_form_file_or_student_id()
+
+
+    programme_name : string
+        If this is not None than the programme requirements for this programme will be checked.
+        Note that every student in the folder will be checked against these requirements.
     """
     
     folder_entries = os.listdir(folder_name)
@@ -806,7 +811,7 @@ def process_folder(folder_name):
     else:
         list_of_data_frames = []
         for filename in form_files:
-            this_data_frame = process_form_file_or_student_id(os.path.join(folder_name, filename))
+            this_data_frame = process_form_file_or_student_id(os.path.join(folder_name, filename), programme_name)
             list_of_data_frames.append(this_data_frame)
             separation_string = '-'*60
             print(' ')
