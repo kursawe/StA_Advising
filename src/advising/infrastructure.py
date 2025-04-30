@@ -402,7 +402,11 @@ def get_all_mms_data_bases():
 # Some data files come with data in the form `="..."`; strip this if it exists
 def strip_excel_formatting(cell_data):
     if isinstance(cell_data, str):
-        if cell_data[:2] == '="' and cell_data[-1] == '"':
+        if cell_data == '=""':
+            return None
+        elif cell_data[:3] == '"="' and cell_data[-2] == '""':
+            return cell_data[3:-2]
+        elif cell_data[:2] == '="' and cell_data[-1] == '"':
             return cell_data[2:-1]
     return cell_data
 
