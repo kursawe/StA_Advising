@@ -31,7 +31,7 @@ def find_timetable_clashes(student):
                                                                (student.honours_module_choices['Honours year'] == honours_year)]['Module code'].to_list()
             timeslot_dictionary = dict()
             for module in semester_modules:
-                these_timeslots = get_timeslots_for_module(module)
+                these_timeslots = get_timeslots_for_module(module, semester)
                 timeslot_dictionary[module] = these_timeslots
             
             timetable_clashes_list += find_clashing_timeslots_and_modules(timeslot_dictionary, honours_year, semester)
@@ -116,7 +116,7 @@ def find_clashing_timeslots_and_modules(module_dictionary, honours_year, semeste
     
     return timetable_clashes_list
    
-def get_timeslots_for_module(module):
+def get_timeslots_for_module(module, semester):
     """Returns all timeslots for a module
     
     Parameters:
@@ -124,6 +124,9 @@ def get_timeslots_for_module(module):
     
     module : string
         the module code we are interested in.
+        
+    semester : string
+        needs to be one of 'S1' or 'S2'
         
     Returns:
     --------
@@ -135,7 +138,13 @@ def get_timeslots_for_module(module):
         # The module does not exist, we have already flagged this
         timeslot_entry = float('nan')
     else:
-        timeslot_entry = module_catalogue[module_catalogue['Module code'] == module]['Timetable'].values[0]
+        timeslot_entries = module_catalogue[module_catalogue['Module code'] == module]['Timetable'].values
+        if len(timeslot_entries) == 1:
+            timeslot_entry = timeslot_entries[0]
+        else:
+            timeslot_entry = module_catalogue[(module_catalogue['Module code'] == module) & 
+                                                              (module_catalogue['Semester'] == semester)]['Timetable'].values[0]
+
     timeslots = []
     
     # special treatment for MT4112 bewcause I can't be bothered to update the parsing below, it'd be a pain
@@ -214,11 +223,13 @@ def find_not_running_modules(student):
             # skip this here
             continue
         module_catalogue_entry = module_catalogue[module_catalogue['Module code'] == planned_module_code]
-        module_semester = module_catalogue_entry['Semester'].values[0]
+        # module_semester = module_catalogue_entry['Semester'].values[0]
+        module_semesters = module_catalogue_entry['Semester']
         # tell if the student picked the wrong semester
-        if planned_semester != module_semester and module_semester != 'Full Year':
+        # if planned_semester != module_semester and module_semester != 'Full Year':
+        if (planned_semester not in module_semesters.values) and ('Full Year' not in module_semesters.values):
             not_running_modules_list.append('Selected module ' + planned_module_code + ' for Semester ' +
-                                            planned_semester + ' but it is actually running in ' + module_semester)
+                                            planned_semester + ' but it is actually running in ' + module_semesters.values[0])
         # figure out when the module is running
         module_academic_year = module_catalogue_entry['Year'].values[0]
         module_is_alternating_entry = module_catalogue_entry['Alternate years'].values[0]
