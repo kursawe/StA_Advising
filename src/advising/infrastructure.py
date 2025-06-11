@@ -253,9 +253,11 @@ def collect_student_data(student_id, include_credits = True):
     s_coded_modules = data_base_of_s_coded_modules['Module code'].to_list()
 
     #identify the programme of the student
-    programme_entries = student_data_base['Programme name'].unique()    
-    assert(len(programme_entries) == 1)
-    programme_name = programme_entries[0]
+    programme_counts = student_data_base['Programme name'].value_counts()
+    programme_name = programme_counts.idxmax()
+    # programme_entries = student_data_base['Programme name'].unique()    
+    # assert(len(programme_entries) == 1)
+    # programme_name = programme_entries[0]
     
     given_name_entries = student_data_base['Given names'].unique()
     assert(len(given_name_entries) == 1)
