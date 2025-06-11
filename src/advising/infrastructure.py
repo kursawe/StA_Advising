@@ -27,10 +27,10 @@ def process_form_file_or_student_id(argument, programme_name = None):
         if this is not none than the programme requirements for this programme will be checked.
     """ 
     if isinstance(argument, str):
-        student_or_warning = parse_excel_form(argument)
+        student_or_warning = parse_excel_form(argument, programme_name = programme_name)
         _,filename_for_output = os.path.split(argument)
     elif isinstance(argument, numbers.Integral):
-        student_or_warning = collect_student_data(argument)
+        student_or_warning = collect_student_data(argument, programme_name = programme_name)
         filename_for_output = 'student id ' + str(argument)
     else:
         raise(ValueError('Could not read argument of process_form_file_or_student, it is not an int or a string'))
@@ -99,7 +99,7 @@ def process_form_file_or_student_id(argument, programme_name = None):
     
     return summary_data_frame
 
-def parse_excel_form(filename):
+def parse_excel_form(filename, programme_name = None):
     """returns an instance of a 'student' class
     that has all the excel data as named attributes
 
@@ -110,6 +110,9 @@ def parse_excel_form(filename):
         path to the file that is being investigated,
         i.e. a filled-in module choice form
         
+    programme_name : string
+        programme name if it should be overwritten and not taken from the student data base
+
     Returns:
     --------
 
@@ -124,7 +127,7 @@ def parse_excel_form(filename):
     if not isinstance(student_id, int):
         return 'No student ID'
         
-    this_student = collect_student_data(student_id, include_credits=False)
+    this_student = collect_student_data(student_id, include_credits=False, programme_name = programme_name)
     if isinstance(this_student, str):
         return this_student
    
@@ -155,7 +158,7 @@ def parse_excel_form(filename):
     # return the student
     return this_student
 
-def collect_student_data(student_id, include_credits = True):
+def collect_student_data(student_id, include_credits = True, programme_name = None):
     """Collects all available data for the student with the given ID
     
     Parameters :
@@ -163,6 +166,12 @@ def collect_student_data(student_id, include_credits = True):
     
     student_id : int
         the student id
+        
+    include_credits : bool
+        if True, all internal tables will be created with a credits column (standard)
+        
+    programme_name : string
+        programme name if it should be overwritten and not taken from the student data base
         
     Returns :
     ---------
@@ -254,10 +263,12 @@ def collect_student_data(student_id, include_credits = True):
 
     #identify the programme of the student
     programme_counts = student_data_base['Programme name'].value_counts()
-    programme_name = programme_counts.idxmax()
+    if programme_name == None:
+        programme_name = programme_counts.idxmax()
     # programme_entries = student_data_base['Programme name'].unique()    
     # assert(len(programme_entries) == 1)
     # programme_name = programme_entries[0]
+    
     
     given_name_entries = student_data_base['Given names'].unique()
     assert(len(given_name_entries) == 1)
