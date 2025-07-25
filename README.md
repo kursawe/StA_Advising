@@ -18,7 +18,7 @@ python advising_tool.py -p "programme name" form_file.xlsx
 
 Here, the the programme name needs to exactly match one of the options listed on University of St Andrews programme requirements website:
 
-https://e-vision.st-andrews.ac.uk/cview/reqs/2024-25/list.html?v=dp
+https://e-vision.st-andrews.ac.uk/cview/reqs/2025-26/list.html?v=dp
 
 The tool will save it's findings into an excel file as well as a Microsoft Word file, and also print everything to command line. The output files are `summary_file.xlsx` and `summary_file.xlsx`. You can save into different files by typing
 
