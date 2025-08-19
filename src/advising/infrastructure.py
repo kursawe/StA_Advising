@@ -132,11 +132,15 @@ def parse_excel_form(filename, programme_name = None):
         return this_student
    
     max_selected_honours_year_string = this_student.honours_module_choices['Honours year'].max()
+    num_modules_in_max_year = (this_student.honours_module_choices['Honours year'] == max_selected_honours_year_string).sum()
     if pd.isna(max_selected_honours_year_string):
         first_year_to_read = this_student.current_honours_year
     else: 
         max_selected_honours_year = int(max_selected_honours_year_string[5])
         first_year_to_read = max_selected_honours_year + 1
+        # if there is only one confirmed module let's ignore it
+        if num_modules_in_max_year == 1:
+            first_year_to_read-=1
     
     # read in modules for all honours years that have not happened yet
 
