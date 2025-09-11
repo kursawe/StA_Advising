@@ -361,9 +361,13 @@ def find_missing_programme_requirements(student):
             list_of_missed_requirements.append('Student is not taking an allowed final year project')
         else:
             # check that the student is actually taking it in year 5
-            this_year = student.honours_module_choices[student.honours_module_choices['Module code'] == 'MT5599']['Honours year'].iloc[0]
-            if this_year != 'Year 3':
+            if len(student.honours_module_choices[student.honours_module_choices['Module code'] == 'MT5599']['Honours year'])>0:
+                this_year = student.honours_module_choices[student.honours_module_choices['Module code'] == 'MT5599']['Honours year'].iloc[0]
+                if this_year != 'Year 3':
+                    list_of_missed_requirements.append('Student is not taking their final year project in their final year.')
+            else: 
                 list_of_missed_requirements.append('Student is not taking their final year project in their final year.')
+
         
         # check dip-down and dip-across: no more than two modules should be outside of MT3X to MT5X
         # list_of_all_non_honours_modules = [module for module in student.all_honours_modules if 'MT3' not in module 
