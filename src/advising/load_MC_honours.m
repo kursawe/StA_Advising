@@ -23,6 +23,10 @@ M=clean_timetable(M);
         ind_clean=find(M.Timetable=="12noon Mon (odd weeks), Wed, Fri, 2pm Fri");
         disp(['Module code: ',M.ModuleCode{ind_clean},' had its timetable cleaned (removed afternoon classes)'])
         M.Timetable(ind_clean)="12noon Mon (odd weeks), Wed, Fri";
+        ind_MT3510=M.ModuleCode=="MT3510";
+        if sum(ind_MT3510)==1
+            M.Timetable(ind_MT3510)="Various";
+        end
     end
 
 end
