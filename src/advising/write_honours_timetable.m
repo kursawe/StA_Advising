@@ -12,7 +12,7 @@ year=year{1};
 
 M = load_MC_honours(file_1);
 M.Properties.VariableNames{9}='Division';
-writetable(M(:,[1,2,4,10,9,5:8]),output_file,'Sheet','Catalogue')
+writetable(M(:,[1,2,4,10,9,5]),output_file,'Sheet','Catalogue')
 
 semester='S1'; make_timetable_instance(M,semester,year);
 semester='S2'; make_timetable_instance(M,semester,year);
