@@ -104,5 +104,11 @@ For anyone interested, this is a quick explanation of the file struture
 - `src/advising/programme_requirements.py`: This file contains the code that checks programme requirements.
 - `src/advising/prerequisites.py`: This file contains the code that works out whether a student meets the prerequisites for selected modules.
 - `src/advising/timetabling.py`: This file contains the code that checks for timetable clashes, and whether modules are running as selected.
-- `src/advising/Module_catalogue.xlsx`: This file contains the data for modules, their timetabling, and their pre/anti-requisites.
 - `pyproject.toml`: This file defines how the advising code should be installed (e.g. via `pip install .`)
+
+### Files related to the module catalogue
+- `src/advising/Module_catalogue.xlsx`: This file contains the data for modules, their timetabling, and their pre/anti-requisites.
+- `src/advising/test_catalogue_differences.m': This file is a matlab function to compare two versions of the module catalogue.
+- `src/advising/write_honours_timetable.m': This file is a matlab function to write the Honours module timetable over the next 3 years based on the module catalogue input excel file. It calls the following functions
+  - `src/advising/load_MC_honours.m':  This file is a matlab function that loads the excel module catalogue into matlab
+  - `src/advising/make_honours_timetable.m': This file is a matlab function that makes the Honours module timetable for a given semester and given year.
