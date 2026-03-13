@@ -108,7 +108,7 @@ For anyone interested, this is a quick explanation of the file struture
 
 ### Files related to the module catalogue
 - `src/advising/Module_catalogue.xlsx`: This file contains the data for modules, their timetabling, and their pre/anti-requisites.
-- `src/advising/test_catalogue_differences.m': This file is a matlab function to compare two versions of the module catalogue.
-- `src/advising/write_honours_timetable.m': This file is a matlab function to write the Honours module timetable over the next 3 years based on the module catalogue input excel file. It calls the following functions
-  - `src/advising/load_MC_honours.m':  This file is a matlab function that loads the excel module catalogue into matlab
-  - `src/advising/make_honours_timetable.m': This file is a matlab function that makes the Honours module timetable for a given semester and given year.
+- `src/advising/test_catalogue_differences.m`: This file is a matlab function to compare two versions of the module catalogue.
+- `src/advising/write_honours_timetable.m`: This file is a matlab function to write the Honours module timetable over the next 3 years based on the module catalogue input excel file. It calls the following functions
+  - `src/advising/load_MC_honours.m`:  This file is a matlab function that loads the excel module catalogue into matlab
+  - `src/advising/make_honours_timetable.m`: This file is a matlab function that makes the Honours module timetable for a given semester and given year.
