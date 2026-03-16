@@ -211,7 +211,7 @@ def collect_student_data(student_id, include_credits = True, programme_name = No
     data_of_module_years = past_student_data_base['Year'].str.slice(0,4).astype('int')
     
     today = date.today()
-    if today.month < 3:
+    if today.month < 4:
         current_calendar_year = today.year - 1
     else:
         current_calendar_year = today.year
@@ -871,7 +871,27 @@ def check_final_year_students():
                 else:
                     student= student_or_warning
                     if student.current_honours_year >= student.expected_honours_years:
-                        this_summary_data_frame = process_form_file_or_student_id(student_id)
+                        try:
+                            this_summary_data_frame = process_form_file_or_student_id(student_id)
+                        except Exception as e:
+                                missed_programme_requirements = 'Error occurred during processing, error message: ' + str(e)
+                                missed_prerequisites = ''
+                                not_running_modules = ''
+                                timetable_clashes = ''
+                                adviser_recommendations = ''
+                                summary_data = [student.student_id, 
+                                                student.full_name,
+                                                student.programme_name,
+                                                student.current_honours_year,
+                                                missed_programme_requirements, 
+                                                missed_prerequisites, 
+                                                not_running_modules, 
+                                                timetable_clashes, 
+                                                adviser_recommendations]
+
+                                this_summary_data_frame = summary_data_frame = generate_summary_data_frame_from_entries(summary_data)
+                                print('Error occurred during processing of student with ID ' + str(student_id) + ', error message: ' + str(e))
+
                         list_of_summary_data_frames.append(this_summary_data_frame)
                         separation_string = '-'*60
                         print(' ')
