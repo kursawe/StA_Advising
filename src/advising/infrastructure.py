@@ -11,7 +11,7 @@ from datetime import date
 module_catalogue_location = os.path.join(os.path.dirname(__file__),'Module_catalogue.xlsx') 
 module_catalogue = pd.read_excel(module_catalogue_location)
 
-def process_form_file_or_student_id(argument, programme_name = None):
+def process_form_file_or_student_id(argument, programme_name = None, year_of_study = None):
     """preforms all advising checks on the 
     submitted form.
     
@@ -25,6 +25,16 @@ def process_form_file_or_student_id(argument, programme_name = None):
         
     programme_name : string
         if this is not none than the programme requirements for this programme will be checked.
+    
+    year_of_study : int
+        if this is not none than the year of study will be taken to be this one instead of being inferred from the data base. 
+        This can be useful for students who have taken a leave of absence or studied abroad, or who are repeating a year.
+
+    Returns:
+    --------
+
+    summary_data_frame : pandas data frame
+        the summary data frame containing all the information about the student and the checks that were performed on their module choices.
     """ 
     if isinstance(argument, str):
         student_or_warning = parse_excel_form(argument, programme_name = programme_name)
@@ -99,7 +109,7 @@ def process_form_file_or_student_id(argument, programme_name = None):
     
     return summary_data_frame
 
-def parse_excel_form(filename, programme_name = None):
+def parse_excel_form(filename, programme_name = None, year_of_study = None):
     """returns an instance of a 'student' class
     that has all the excel data as named attributes
 
@@ -112,6 +122,9 @@ def parse_excel_form(filename, programme_name = None):
         
     programme_name : string
         programme name if it should be overwritten and not taken from the student data base
+
+    year_of_study : int
+        the year of study if it should be overwritten and not taken from the student data base
 
     Returns:
     --------
@@ -127,7 +140,7 @@ def parse_excel_form(filename, programme_name = None):
     if not isinstance(student_id, int):
         return 'No student ID'
         
-    this_student = collect_student_data(student_id, include_credits=False, programme_name = programme_name)
+    this_student = collect_student_data(student_id, include_credits=False, programme_name = programme_name, year_of_study = year_of_study)
     if isinstance(this_student, str):
         return this_student
    
@@ -162,7 +175,7 @@ def parse_excel_form(filename, programme_name = None):
     # return the student
     return this_student
 
-def collect_student_data(student_id, include_credits = True, programme_name = None):
+def collect_student_data(student_id, include_credits = True, programme_name = None, year_of_study = None):
     """Collects all available data for the student with the given ID
     
     Parameters :
@@ -177,6 +190,9 @@ def collect_student_data(student_id, include_credits = True, programme_name = No
     programme_name : string
         programme name if it should be overwritten and not taken from the student data base
         
+    year_of_study : int
+        the year of study if it should be overwritten and not taken from the student data base
+
     Returns :
     ---------
     
@@ -231,8 +247,12 @@ def collect_student_data(student_id, include_credits = True, programme_name = No
    
     # we add the +1 as the year of steady is 1-indexed instead of 0-indexed
     # i.e. students starting this year will be in year 1
-    year_of_study = current_calendar_year - earliest_year + 1
-    year_of_study = year_of_study - leave_of_absence_years
+    if year_of_study is None:
+        year_of_study = current_calendar_year - earliest_year + 1
+        year_of_study = year_of_study - leave_of_absence_years
+        year_of_study_provided = False
+    else:
+        year_of_study_provided = True
     
     # identify all modules that the student has passed
     data_base_of_passed_modules = student_data_base[(student_data_base['Assessment result']=='P') | 
@@ -330,20 +350,22 @@ def collect_student_data(student_id, include_credits = True, programme_name = No
     if not data_base_of_honours_modules.empty:
         data_of_honours_module_years = data_base_of_honours_modules['Year'].str.slice(0,4).astype('int')
         first_honours_year = data_of_honours_module_years.min()
-        current_honours_year = current_calendar_year - first_honours_year + 1
+        if not year_of_study_provided:
+            current_honours_year = current_calendar_year - first_honours_year + 1
         leave_of_absence_years_honours = 0
         for year in range(first_honours_year, current_calendar_year):
             if year not in data_of_module_years.to_list():
                 leave_of_absence_years_honours +=1
-        current_honours_year -= leave_of_absence_years_honours
-        year_of_study = current_honours_year + no_subhonours_years
+        if not year_of_study_provided:
+            current_honours_year -= leave_of_absence_years_honours
+            year_of_study = current_honours_year + no_subhonours_years
         # use this information to get a more accurate guess of what honours modules they have taken
         passed_honours_modules = list()
         for previous_year in range(first_honours_year,current_calendar_year+1):
             calendar_year_string = str(previous_year) + '/' + str(previous_year + 1)
             data_base_of_passed_modules_this_year = data_base_of_passed_modules[data_base_of_passed_modules['Year']==calendar_year_string]
-            passed_modules_this_hear = data_base_of_passed_modules_this_year['Module code'].to_list()
-            passed_honours_modules += passed_modules_this_hear
+            passed_modules_this_year = data_base_of_passed_modules_this_year['Module code'].to_list()
+            passed_honours_modules += passed_modules_this_year
 
     passed_module_table = reduce_official_data_base(data_base_of_passed_modules, current_honours_year, current_calendar_year) 
     

@@ -896,12 +896,8 @@ def get_total_honours_credits(student):
     total_credits : int
         total number of credtis the student took at honours
     """
-    passed_honours_module_table = student.passed_module_table[student.passed_module_table['Honours year'].isin(['Year 1',
-                                                                                                                'Year 2',
-                                                                                                                'Year 3',
-                                                                                                                'Year 4',
-                                                                                                                'Year 5',
-                                                                                                                'Year 6'])]
+    passed_honours_module_table = student.passed_module_table[student.passed_module_table['Module code'].isin(student.passed_honours_modules)]
+ 
     passed_honours_credits = passed_honours_module_table['Credits'].sum()
     planned_honours_credits = student.honours_module_choices['Credits'].sum()
     total_credits = passed_honours_credits + planned_honours_credits
