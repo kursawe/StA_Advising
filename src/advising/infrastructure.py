@@ -36,11 +36,16 @@ def process_form_file_or_student_id(argument, programme_name = None, year_of_stu
     summary_data_frame : pandas data frame
         the summary data frame containing all the information about the student and the checks that were performed on their module choices.
     """ 
+
+    print('Processing file or student')
+    print(str(argument))
+    print(' ')
+
     if isinstance(argument, str):
-        student_or_warning = parse_excel_form(argument, programme_name = programme_name)
+        student_or_warning = parse_excel_form(argument, programme_name = programme_name, year_of_study = year_of_study)
         _,filename_for_output = os.path.split(argument)
     elif isinstance(argument, numbers.Integral):
-        student_or_warning = collect_student_data(argument, programme_name = programme_name)
+        student_or_warning = collect_student_data(argument, programme_name = programme_name, year_of_study = year_of_study)
         filename_for_output = 'student id ' + str(argument)
     else:
         raise(ValueError('Could not read argument of process_form_file_or_student, it is not an int or a string'))
@@ -66,9 +71,7 @@ def process_form_file_or_student_id(argument, programme_name = None, year_of_stu
     student = student_or_warning
     if programme_name is not None:
         student.programme_name = programme_name
-    print('Processing file or student')
-    print(str(argument))
-    print(' ')
+
     print('Student ID: ' + str(student.student_id))
     print('Name: ' + student.full_name)
     print('Programme: ' + student.programme_name)
@@ -204,6 +207,7 @@ def collect_student_data(student_id, include_credits = True, programme_name = No
     
     # Now that we have the student ID we can look up the student in the database:
     data_bases = get_all_mms_data_bases()
+    year_data_base = get_year_data_base()
 
     # get a table with only the entries for this student
     student_not_yet_found = True
@@ -245,15 +249,27 @@ def collect_student_data(student_id, include_credits = True, programme_name = No
         if year not in data_of_module_years.to_list():
             leave_of_absence_years +=1
    
-    # we add the +1 as the year of steady is 1-indexed instead of 0-indexed
-    # i.e. students starting this year will be in year 1
-    if year_of_study is None:
+    year_of_study_in_data_base = False
+    if year_data_base is not None and student_id in year_data_base['Student ID'].to_numpy():
+        data_base_year_of_study = year_data_base[year_data_base['Student ID'] == student_id]['Programme year'].values[0]
+        if not pd.isna(data_base_year_of_study):
+            # data_base_year_of_study -= 1
+            year_of_study_in_data_base = True
+
+    year_of_study_provided_as_argument = False
+    if year_of_study is not None:
+        year_of_study_provided = True
+        year_of_study_provided_as_argument = True
+    elif year_of_study_in_data_base:
+        year_of_study = data_base_year_of_study
+        print('Year of study successfully obtained from data base. The student ' + str(student_id) + ' is in year ' + str(data_base_year_of_study) + '.')
+        print(' ')
+        year_of_study_provided = True
+    else:
         year_of_study = current_calendar_year - earliest_year + 1
         year_of_study = year_of_study - leave_of_absence_years
         year_of_study_provided = False
-    else:
-        year_of_study_provided = True
-    
+ 
     # identify all modules that the student has passed
     data_base_of_passed_modules = student_data_base[(student_data_base['Assessment result']=='P') | 
                                                     (student_data_base['Reassessment result']=='P') |
@@ -330,6 +346,10 @@ def collect_student_data(student_id, include_credits = True, programme_name = No
     
     if 'EXA120' in student_data_base['Module code'].values:
         no_of_programme_years -=1
+        if not year_of_study_provided_as_argument and year_of_study_in_data_base:
+            # for direct entry students the data base counts years of study as starting in year two
+            # but the script infrastructure counts them as starting on year one on a shorter programme
+            year_of_study -=1
         
     no_subhonours_years = no_of_programme_years - expected_honours_years
     current_honours_year = year_of_study - no_subhonours_years
@@ -437,6 +457,55 @@ def get_all_mms_data_bases():
                                                   "Credits": "float64"}))
 
     return data_bases
+
+def get_year_data_base():
+    '''Loads a data base of programme years for each student. Relies on data downloaded from the advising system.
+    If the database is not present, it returns 'None'.
+    
+    Returns : 
+    ---------
+    
+    year_data_base : pandas dataframe
+        The year data base as pandas data frame or 'None' if not present. The pandas data frame will have columns 'Student ID' and 'Programme year'.
+    '''
+    current_file_directory = os.path.dirname(os.path.abspath(__file__))
+
+    # Find the data directory; this should be at ../../student_data (if running advising_tool.py)
+    # or at the CWD[/student_data] if using as a library
+    path_if_tool = os.path.join(current_file_directory, '../..', 'student_data')
+    path_if_cwd = os.path.join(os.getcwd(), "student_data")
+
+    if os.path.exists(path_if_tool):
+        data_directory = path_if_tool
+    elif os.path.exists(path_if_cwd):
+        data_directory = path_if_cwd
+    else:
+        data_directory = os.getcwd()
+
+    potential_data_files = os.listdir(data_directory)
+    data_base_found = False
+    for candidate_filename in potential_data_files:
+       this_filename, file_extension = os.path.splitext(candidate_filename)
+       if file_extension == '.xlsx':
+           file_path = os.path.join(data_directory, candidate_filename)
+           try:
+               this_data_frame = pd.read_excel(file_path, engine = 'openpyxl')
+           except:
+               continue
+           if 'Year of programme' in this_data_frame.columns:
+                full_data_base = this_data_frame
+                data_base_found = True
+                break
+
+    if data_base_found:
+        year_data_base = full_data_base[['Student ID', 'Year of programme']].copy()
+        # data_base_of_years = data_base_of_years.rename(columns={'Year of programme': 'Programme year'})
+        year_data_base["Student ID"] = year_data_base["Student ID"].str.split("/").str[0].astype(int)
+        year_data_base["Programme year"] = year_data_base["Year of programme"].str.extract(r"Programme year (\d+) of \d+").astype("Int64")
+        del year_data_base['Year of programme']
+        return year_data_base
+    else:
+        return None
 
 # Some data files come with data in the form `="..."`; strip this if it exists
 def strip_excel_formatting(cell_data):
