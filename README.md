@@ -26,7 +26,7 @@ The tool has an additional option to provide a year of study. For most students,
 python advising_tool.py -y YEAR form_file.xlsx
 ```
 
-Here, YEAR will need to be an integer value. Note, that contrary to other St Andrews systems the script counts the year of study as 1-based for students who started their programme via direct entry, i.e. for a direct entry student the honours years are counted as year 2 and year 3, instead of year 3 and year 4 of the programme.
+Here, YEAR will need to be an integer value. Note, that contrary to other St Andrews systems the tool counts the year of study as 1-based for students who started their programme via direct entry, i.e. for a direct entry student the honours years are counted as year 2 and year 3, instead of year 3 and year 4 of the programme.
 
 The tool will save it's findings into an excel file as well as a Microsoft Word file, and also print everything to command line. The output files are `summary_file.xlsx` and `summary_file.xlsx`. You can save into different files by typing
 
@@ -76,7 +76,7 @@ then click on 'Show extra search options'. This will open up new options to sele
 This should look something like this:
 ![](./img/repository_image.png)
 
-Click the 'Search' button and save the generated file in the subfolder `student_data`, which is part of the repository file structure. In some cases, this will result in an error noting 'Too many results'. In those cases, additionally, download multiple files for the selection by further restricting the 'in any part of the year' option to 'in semester 1', 'in semester 2', and 'spanning the whole year'. 
+Click the 'Search' button and save the generated file in the subfolder `student_data`, which is part of the repository file structure. In some cases, this will result in an error noting 'Too many results'. In those cases, download multiple files for the selection by further restricting the 'in any part of the year' option to 'in semester 1', 'in semester 2', and 'spanning the whole year', consecutively. 
 
 Repeat the process three times by selecting 'MT3* modules', 'MT4* modules' and also 'MT5* modules'.
 
@@ -85,7 +85,7 @@ Repeat the process three times by selecting 'MT3* modules', 'MT4* modules' and a
 Advisers can optionally download an additional file containing the year of study for each student. This option is recommended. To do so, enter the advising interface and click on 'Search for student' in the left-hand panel. In the resulting interface, select 'Advanced search'. The page should look like this:
 ![](./img/advising_page_image.png)
 
-Without making any selection in the available drop-down menus, simply click on 'Search'. In the resulting interface, click on 'Excel' in the top right corner, and download the file into a location of your choosing. Finally, open the resulting file in Microsoft Excel and save it from Excel in the subfolder `student data` of this repository. The additional step of saving from Excel is necessary to ensure that the saved file is compatible with the advising tool.
+Without making any selection in the available drop-down menus, simply click on 'Search'. In the resulting interface, click on 'Excel' in the top right corner, and download the file into a location of your choosing. Finally, open the resulting file in Microsoft Excel and save it from Excel into the subfolder `student data` of this repository. The additional step of saving from Excel is necessary to ensure that the saved file format is compatible with the advising tool.
 
 When available, the advising tool will use this additional file to read in the year of study for individual students. If the file is not provided, the tool will infer the year of study from the module record of the student, which can give wrong results in some cases, for example for students who have taken a Leave of Absence for individual semesters. 
 
