@@ -20,6 +20,14 @@ Here, the the programme name needs to exactly match one of the options listed on
 
 https://e-vision.st-andrews.ac.uk/cview/reqs/2025-26/list.html?v=dp
 
+The tool has an additional option to provide a year of study. For most students, the script will correctly infer the year of study from other provided data. Should the output be corrupted because the inferred year is wrong, it may help to provide the year of study for an individual student via
+
+```
+python advising_tool.py -y YEAR form_file.xlsx
+```
+
+Here, YEAR will need to be an integer value. Note, that contrary to other St Andrews systems the script counts the year of study as 1-based for students who started their programme via direct entry, i.e. for a direct entry student the honours years are counted as year 2 and year 3, instead of year 3 and year 4 of the programme.
+
 The tool will save it's findings into an excel file as well as a Microsoft Word file, and also print everything to command line. The output files are `summary_file.xlsx` and `summary_file.xlsx`. You can save into different files by typing
 
 ```
@@ -35,7 +43,7 @@ python advising_tool.py --help
 If you would prefer other output formats, let Jochen know.
 
 # Installation and file setup
-Installation of this tool requires three steps: (i) Installing python dependencies, (ii) Downloading the code from this repository and (iii) Donwloading student data files from MMS
+Installation of this tool requires three steps: (i) Installing python dependencies, (ii) Downloading the code from this repository and (iii) Donwloading student data files from MMS.
 
 ## Installing python 
 If you don't have python installed on your computer, I recommend installing anaconda (https://www.anaconda.com/). Once python is installed, you need to install a small number of python packages by typing
@@ -60,7 +68,7 @@ Downloading a .zip file and extracting it is also an option.
 
 ## Accessing student data files
 
-To access student module data navigate to the website
+This instruction applies in particular to advisors. To access student module data navigate to the website
 
 https://www.st-andrews.ac.uk/studentrecords/
 
@@ -68,14 +76,25 @@ then click on 'Show extra search options'. This will open up new options to sele
 This should look something like this:
 ![](./img/repository_image.png)
 
-Click the 'Search' button and save the generated file in the subfolder `student_data`, which is part of the repository file structure. Repeat the process three times by selecting 'MT3* modules', 'MT4* modules' and also 'MT5* modules'.
+Click the 'Search' button and save the generated file in the subfolder `student_data`, which is part of the repository file structure. In some cases, this will result in an error noting 'Too many results'. In those cases, additionally, download multiple files for the selection by further restricting the 'in any part of the year' option to 'in semester 1', 'in semester 2', and 'spanning the whole year'. 
+
+Repeat the process three times by selecting 'MT3* modules', 'MT4* modules' and also 'MT5* modules'.
+
+## Optionally download year-of-study data from the advising system
+
+Advisers can optionally download an additional file containing the year of study for each student. This option is recommended. To do so, enter the advising interface and click on 'Search for student' in the left-hand panel. In the resulting interface, select 'Advanced search'. The page should look like this:
+![](./img/advising_page_image.png)
+
+Without making any selection in the available drop-down menus, simply click on 'Search'. In the resulting interface, click on 'Excel' in the top right corner, and download the file into a location of your choosing. Finally, open the resulting file in Microsoft Excel and save it from Excel in the subfolder `student data` of this repository. The additional step of saving from Excel is necessary to ensure that the saved file is compatible with the advising tool.
+
+When available, the advising tool will use this additional file to read in the year of study for individual students. If the file is not provided, the tool will infer the year of study from the module record of the student, which can give wrong results in some cases, for example for students who have taken a Leave of Absence for individual semesters. 
 
 # Functionality
 The tool will check programme requirements, check that modules are running in the selected semesters, it will check for timetable clashes among MT modules, and it will check prerequisites. The script works for students entering Honours as well as returning honours students.
 
 In the module choice forms, the code relies on the fact that a valid student ID is in cell 'D5'. Module choices are identified by their heading. That means, the form can be read even if empty lines or sections are deleted in the module choice form. However, adding or deleting columns may stop the form from being read.
 
- When accessing student data, the will take as much data from the official data records as possible and minimise the input from the form. That means, the only data read from the module choice forms are the student ID and the selected module codes under each relevant header. If a student is a returning honours student, module choices for previously taken honours years are found in the student data base. Only module choices for planned honours years are read from the module choice form.
+When accessing student data, the will take as much data from the official data records as possible and minimise the input from the form. That means, the only data read from the module choice forms are the student ID and the selected module codes under each relevant header. If a student is a returning honours student, module choices for previously taken honours years are found in the student data base. Only module choices for planned honours years are read from the module choice form.
 
 # Troubleshooting and known issues
 The officially available records do not contain data on the year of study. Hence, the tool infers the year of study and the honours year based on the first year a module was taken, and on the number of subhonours years. This will go wrong if a student is studying part time or has been on leave of absence.
