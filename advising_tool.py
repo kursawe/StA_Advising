@@ -14,7 +14,7 @@ if __name__ == "__main__":
     parser.add_argument('-o', '--output', type = str, default = 'summary_file.xlsx', help = 'name of the output excel file')       
     parser.add_argument('--check-final-years', action="store_true", help = 'use this option to check all final year students using the database only')
     parser.add_argument('-p', '--programme_name', type = str, help = 'use this option to provide an alternative programme name. Will be ignored if more than one student is checked.')
-    parser.add_argument('-y', '--year_of_study', type = int, help = 'use this option to manually provide the year of study. Will be ignored if more than one student is checked.')
+    parser.add_argument('-y', '--year_of_study', type = int, help = 'use this option to manually provide the year of study. Will be ignored if more than one student is checked. Note, that the expected input is 1-based for all students, i.e. for direct entry students the years of study are year 1, 2, and 3 instead of 2, 3, and 4.')
 
     args = parser.parse_args()
 
