@@ -24,9 +24,11 @@ def find_missing_prerequisites(student):
     list_of_recommendations = []
     
     for module in student.planned_honours_modules:
-        these_missing_prerequisites, these_adviser_recommendations = get_missing_prerequisites_for_module(module, student)
-        list_of_missed_prerequisites += [these_missing_prerequisites]
-        list_of_recommendations += [these_adviser_recommendations]
+        module_honours_year = student.honours_module_choices[student.honours_module_choices['Module code'] == module]['Honours year'].values[0]
+        if int(module_honours_year.split()[1]):
+            these_missing_prerequisites, these_adviser_recommendations = get_missing_prerequisites_for_module(module, student)
+            list_of_missed_prerequisites += [these_missing_prerequisites]
+            list_of_recommendations += [these_adviser_recommendations]
         
     # merge all missed prerequisites into a string
     missed_prerequisites = merge_list_to_long_string(list_of_missed_prerequisites)
