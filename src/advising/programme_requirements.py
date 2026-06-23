@@ -964,7 +964,7 @@ def check_joint_honours_requirements(student):
     list_of_MT350X_modules = ['MT3501', 'MT3502', 'MT3503', 'MT3504', 'MT3505', 'MT3506', 'MT3507', 'MT3508']
     number_of_MT350X_modules = student.get_number_of_modules_in_list(list_of_MT350X_modules)
     if number_of_MT350X_modules < 3:
-        list_of_missed_requirements.append('Student is only taking ' + str(number_of_MT350X_modules) + ' modules out of MT3501-MT3504 (instead of 3)')
+        list_of_missed_requirements.append('Student is only taking ' + str(number_of_MT350X_modules) + ' modules out of MT3501-MT3508 (instead of 3)')
         
     # check there is a final year project
     if student.programme_name in joint_project_dictionary.keys():
